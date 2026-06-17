@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\UserPrivilege;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -45,6 +46,7 @@ class User extends Authenticatable implements PasskeyUser
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'privilege' => UserPrivilege::class,
         ];
     }
 
@@ -58,5 +60,28 @@ class User extends Authenticatable implements PasskeyUser
             ->take(2)
             ->map(fn ($word) => Str::substr($word, 0, 1))
             ->implode('');
+    }
+
+    public function shops()
+    {
+        return $this->belongsToMany(Shop::class, 'users_shops', 'user_id', 'shop_id');
+    }
+
+    public function contact()
+    {
+        return $this->belongsTo(Contact::class);
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->privilege->isAdmin();
+    }
+
+    public function hasAccessToShop(Shop $shop): bool
+    {
+        if ($this->isAdmin()) {
+            return true;
+        }
+        return $this->shops()->where('shop_id', $shop->id)->exists();
     }
 }
