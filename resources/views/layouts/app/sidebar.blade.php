@@ -4,18 +4,21 @@
         @include('partials.head')
     </head>
     <body class="min-h-screen bg-white dark:bg-zinc-800">
-        <flux:sidebar sticky collapsible="mobile" class="border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
+        <flux:sidebar sticky collapsible class="border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
             <flux:sidebar.header>
                 <x-app-logo :sidebar="true" href="{{ route('dashboard') }}" wire:navigate />
-                <flux:sidebar.collapse class="lg:hidden" />
+                <flux:sidebar.collapse class="in-data-flux-sidebar-on-desktop:not-in-data-flux-sidebar-collapsed-desktop:-mr-2" />
             </flux:sidebar.header>
 
-            <div class="px-3 py-2">
-                <x-shop-switcher />
-            </div>
 
             <flux:sidebar.nav>
-                <flux:sidebar.group :heading="__('Sklep')" class="grid">
+                <x-shop-switcher />
+            </flux:sidebar.nav>
+
+
+            <flux:separator />
+
+            <flux:sidebar.nav>
                 @php
                     $currentShop = request()->route('shop');
                     $shopParam = $currentShop ? ['shop' => $currentShop] : [];
@@ -28,7 +31,7 @@
                 <flux:sidebar.item icon="archive-box" :href="route($routePrefix . 'items.index', $shopParam)" :current="request()->routeIs('*items.*')" wire:navigate>
                     Magazyn
                 </flux:sidebar.item>
-                <flux:sidebar.item icon="shopping-cart" :href="route($routePrefix . 'dashboard', $shopParam)" :current="request()->routeIs('*sells.*')" wire:navigate>
+                <flux:sidebar.item icon="shopping-cart" :href="route($routePrefix . 'sells.index', $shopParam)" :current="request()->routeIs('*sells.*')" wire:navigate>
                     Sprzedaż
                 </flux:sidebar.item>
                 <flux:sidebar.item icon="truck" :href="route($routePrefix . 'dashboard', $shopParam)" :current="request()->routeIs('*purchases.*')" wire:navigate>
@@ -37,7 +40,6 @@
                 <flux:sidebar.item icon="arrows-right-left" :href="route($routePrefix . 'dashboard', $shopParam)" :current="request()->routeIs('*transfers.*')" wire:navigate>
                     Transfery
                 </flux:sidebar.item>
-                </flux:sidebar.group>
             </flux:sidebar.nav>
 
             <flux:spacer />
