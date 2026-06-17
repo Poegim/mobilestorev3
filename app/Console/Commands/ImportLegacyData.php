@@ -159,17 +159,42 @@ class ImportLegacyData extends Command
 
     private function importContacts(): void
     {
-        $this->importChunked('Contacts', 'contacts', 'contacts', fn ($r) => [
-            'id' => $r['id'],
-            'name' => trim(($r['email'] ?: '') . ' ' . ($r['phone'] ?: '')),
-            'identity_number' => $r['identity_number'] ?? '',
-            'email' => $r['email'] ?? '',
-            'phone' => $r['phone'] ?? '',
-            'city' => $r['city'] ?? '',
-            'postal_code' => is_string($r['postal_code']) ? substr($r['postal_code'], 0, 16) : '',
-            'street' => $r['street'] ?? '',
-            'notes' => $r['notes'] ?? null,
-        ]);
+        $count = 0;
+
+        // get names from people and companies tables
+        $peopleNames = $this->legacy('contacts_people')
+            ->pluck(DB::raw("CONCAT(name, ' ', surname)"), 'id')
+            ->toArray();
+
+        $companyNames = $this->legacy('contacts_companies')
+            ->pluck('name', 'id')
+            ->toArray();
+
+        $this->legacy('contacts')->orderBy('id')->chunk(1000, function ($rows) use (&$count, $peopleNames, $companyNames) {
+            $batch = [];
+            foreach ($rows as $row) {
+                $r = (array) $row;
+                $name = $companyNames[$r['id']] ?? $peopleNames[$r['id']] ?? '';
+                $batch[] = [
+                    'id' => $r['id'],
+                    'name' => $name,
+                    'identity_number' => $r['identity_number'] ?? '',
+                    'email' => $r['email'] ?? '',
+                    'phone' => $r['phone'] ?? '',
+                    'city' => $r['city'] ?? '',
+                    'postal_code' => is_string($r['postal_code']) ? substr($r['postal_code'], 0, 16) : '',
+                    'street' => $r['street'] ?? '',
+                    'notes' => $r['notes'] ?? null,
+                ];
+            }
+            if ($batch) {
+                DB::table('contacts')->insert($batch);
+                $count += count($batch);
+            }
+        });
+
+        $this->imported += $count;
+        $this->line("  ✓ Contacts: {$count} records");
     }
 
     private function importUsers(): void
