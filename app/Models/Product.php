@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Product extends Model
 {
-    public $timestamps = false;
+    
     protected $fillable = ['name', 'parent_category_id', 'brand_id', 'gtin'];
 
     public function category()

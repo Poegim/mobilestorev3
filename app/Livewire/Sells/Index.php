@@ -88,31 +88,31 @@ class Index extends Component
         return PaymentMethod::cases();
     }
 
-    /** @return array{int, int} Unix timestamp range for current period */
-    private function getTimestampRange(): array
+    /** @return array{Carbon, Carbon} Date range for current period */
+    private function getDateRange(): array
     {
         return match ($this->period) {
             'today' => [
-                Carbon::today()->startOfDay()->timestamp,
-                Carbon::today()->endOfDay()->timestamp,
+                Carbon::today()->startOfDay(),
+                Carbon::today()->endOfDay(),
             ],
             'week' => [
-                Carbon::now()->startOfWeek()->timestamp,
-                Carbon::now()->endOfWeek()->timestamp,
+                Carbon::now()->startOfWeek(),
+                Carbon::now()->endOfWeek(),
             ],
             'month' => [
-                Carbon::now()->startOfMonth()->timestamp,
-                Carbon::now()->endOfMonth()->timestamp,
+                Carbon::now()->startOfMonth(),
+                Carbon::now()->endOfMonth(),
             ],
             'year' => [
-                Carbon::now()->startOfYear()->timestamp,
-                Carbon::now()->endOfYear()->timestamp,
+                Carbon::now()->startOfYear(),
+                Carbon::now()->endOfYear(),
             ],
             'custom' => [
-                $this->dateFrom ? Carbon::parse($this->dateFrom)->startOfDay()->timestamp : 0,
-                $this->dateTo ? Carbon::parse($this->dateTo)->endOfDay()->timestamp : Carbon::now()->endOfDay()->timestamp,
+                $this->dateFrom ? Carbon::parse($this->dateFrom)->startOfDay() : Carbon::createFromTimestamp(0),
+                $this->dateTo ? Carbon::parse($this->dateTo)->endOfDay() : Carbon::now()->endOfDay(),
             ],
-            default => [0, Carbon::now()->endOfDay()->timestamp], // 'all'
+            default => [Carbon::createFromTimestamp(0), Carbon::now()->endOfDay()],
         };
     }
 
@@ -137,8 +137,8 @@ class Index extends Component
 
         // Period filter
         if ($this->period !== 'all') {
-            [$from, $to] = $this->getTimestampRange();
-            $query->whereBetween('added_timestamp', [$from, $to]);
+            [$from, $to] = $this->getDateRange();
+            $query->whereBetween('created_at', [$from, $to]);
         }
 
         if ($this->valid !== 'all') {
@@ -158,7 +158,7 @@ class Index extends Component
             });
         }
 
-        $sells = $query->orderByDesc('added_timestamp')->paginate($this->perPage);
+        $sells = $query->orderByDesc('created_at')->paginate($this->perPage);
 
         return view('livewire.sells.index', [
             'sells' => $sells,

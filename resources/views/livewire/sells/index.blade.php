@@ -94,7 +94,7 @@
                         @endif
                     </flux:table.cell>
                     <flux:table.cell class="text-zinc-500 text-sm">
-                        {{ \Carbon\Carbon::createFromTimestamp($sell->added_timestamp)->format('d.m.Y H:i') }}
+                        {{ \Carbon\Carbon::createFromTimestamp($sell->created_at)->format('d.m.Y H:i') }}
                     </flux:table.cell>
                     <flux:table.cell>
                         @if($sell->valid)

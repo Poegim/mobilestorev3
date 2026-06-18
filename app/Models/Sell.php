@@ -7,9 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class Sell extends Model
 {
-    public $timestamps = false;
+    
+    
     protected $fillable = [
-        'parent_shop_id', 'added_timestamp', 'valid', 'payment_method',
+        'parent_shop_id', 'valid', 'payment_method',
     ];
 
     protected $casts = [

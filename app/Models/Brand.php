@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Brand extends Model
 {
-    public $timestamps = false;
+    
     protected $fillable = ['name'];
 
     public function products()

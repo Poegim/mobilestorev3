@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class PurchasedItem extends Model
 {
-    public $timestamps = false;
+    
     protected $table = 'purchases_items';
     protected $fillable = ['purchase_id', 'item_id', 'tax_id', 'price'];
 

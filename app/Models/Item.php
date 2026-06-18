@@ -6,16 +6,17 @@ use App\Enums\ItemStatus;
 use Illuminate\Database\Eloquent\Model;
 
 class Item extends Model
-{
-    public $timestamps = false;
+{    
     protected $fillable = [
         'parent_shop_id', 'product_id', 'status',
         'feature_condition_id', 'feature_price',
-        'barcode_scanned_timestamp', 'displacement_timestamp',
+        'barcode_scanned_at', 'displaced_at',
     ];
 
     protected $casts = [
         'status' => ItemStatus::class,
+        'barcode_scanned_at' => 'datetime',
+        'displaced_at' => 'datetime',
     ];
 
     public function shop()
@@ -41,6 +42,15 @@ class Item extends Model
     public function soldItem()
     {
         return $this->hasOne(SoldItem::class, 'item_id')->where('valid', 1);
+    }
+
+    public function getDaysOnShelfAttribute(): ?int
+    {
+        if (!$this->displaced_at) {
+            return null;
+        }
+
+        return (int) $this->displaced_at->diffInDays(now());
     }
 
     // cena w groszach — fallback: item → sklep → globalna

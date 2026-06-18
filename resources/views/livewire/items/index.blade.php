@@ -8,6 +8,11 @@
         <div class="flex-1">
             <flux:input wire:model.live.debounce.300ms="search" placeholder="Szukaj produktu..." icon="magnifying-glass" />
         </div>
+        <flux:select wire:model.live="period" class="w-48">
+            @foreach(\App\Enums\Period::cases() as $p)
+                <option value="{{ $p->value }}">{{ $p->label() }}</option>
+            @endforeach
+        </flux:select>
         <flux:select wire:model.live="category" class="w-56">
             <option value="">Wszystkie kategorie</option>
             @foreach($this->categoryTree as $group)
@@ -37,6 +42,7 @@
             <flux:table.column>Stan</flux:table.column>
             <flux:table.column>Cena</flux:table.column>
             <flux:table.column>Zakup</flux:table.column>
+            <flux:table.column>DSNP</flux:table.column>
             <flux:table.column>Status</flux:table.column>
         </flux:table.columns>
 
@@ -62,8 +68,18 @@
                                 <div>FV: {{ $item->purchasedItem->purchase->invoice_number ?: 'brak' }}</div>
                                 <div class="text-zinc-500">{{ Str::limit($item->purchasedItem->purchase->contact->name ?? '-', 20) }}</div>
                                 <div class="text-zinc-400 text-xs">
-                                    {{ date('d.m.Y', $item->purchasedItem->purchase->added_timestamp) }}
+                                    {{ $item->purchasedItem->purchase->created_at->format('d.m.Y') }}
                                 </div>
+                            </div>
+                        @else
+                            -
+                        @endif
+                    </flux:table.cell>
+                    <flux:table.cell>
+                        @if($item->displaced_at)
+                            <div class="text-sm">
+                                <span class="font-medium">{{ $item->days_on_shelf }} dni</span>
+                                <div class="text-zinc-400 text-xs">od {{ $item->displaced_at->format('d.m.Y') }}</div>
                             </div>
                         @else
                             -

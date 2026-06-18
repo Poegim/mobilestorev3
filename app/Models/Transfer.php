@@ -7,10 +7,14 @@ use Illuminate\Database\Eloquent\Model;
 
 class Transfer extends Model
 {
-    public $timestamps = false;
     protected $fillable = [
         'parent_shop_id', 'target_shop_id',
-        'added_timestamp', 'finished_timestamp', 'status',
+        'finished_at', 'status',
+    ];
+
+    protected $casts = [
+        'status' => TransferStatus::class,
+        'finished_at' => 'datetime',
     ];
 
     protected $casts = [

@@ -100,6 +100,8 @@ class ImportLegacyData extends Command
             'id' => $r['id'],
             'name' => $r['name'],
             'percentage' => $r['percentage'],
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
     }
 
@@ -108,6 +110,8 @@ class ImportLegacyData extends Command
         $this->importChunked('Conditions', 'conditions', 'conditions', fn ($r) => [
             'id' => $r['id'],
             'name' => $r['name'],
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
     }
 
@@ -116,6 +120,8 @@ class ImportLegacyData extends Command
         $this->importChunked('Brands', 'brands', 'brands', fn ($r) => [
             'id' => $r['id'],
             'name' => $r['name'],
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
     }
 
@@ -125,6 +131,8 @@ class ImportLegacyData extends Command
             'id' => $r['id'],
             'name' => $r['name'],
             'parent_category_id' => $r['parent_category_id'],
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
     }
 
@@ -136,6 +144,8 @@ class ImportLegacyData extends Command
             'parent_category_id' => $r['parent_category_id'],
             'brand_id' => $r['brand_id'],
             'gtin' => $r['gtin'],
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
     }
 
@@ -154,6 +164,8 @@ class ImportLegacyData extends Command
             'address_apartment_number' => $r['address_apartment_number'],
             'order' => $r['order'],
             'archive' => $r['archive'],
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
     }
 
@@ -161,7 +173,6 @@ class ImportLegacyData extends Command
     {
         $count = 0;
 
-        // get names from people and companies tables
         $peopleNames = $this->legacy('contacts_people')
             ->pluck(DB::raw("CONCAT(name, ' ', surname)"), 'id')
             ->toArray();
@@ -185,6 +196,8 @@ class ImportLegacyData extends Command
                     'postal_code' => is_string($r['postal_code']) ? substr($r['postal_code'], 0, 16) : '',
                     'street' => $r['street'] ?? '',
                     'notes' => $r['notes'] ?? null,
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ];
             }
             if ($batch) {
@@ -232,6 +245,8 @@ class ImportLegacyData extends Command
                 'id' => $r['id'],
                 'shop_id' => $r['shop_id'],
                 'user_id' => $r['user_id'],
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
             $count++;
         }
@@ -248,8 +263,10 @@ class ImportLegacyData extends Command
             'status' => $r['status'],
             'feature_condition_id' => $r['feature_condition_id'],
             'feature_price' => $r['feature_price'],
-            'barcode_scanned_timestamp' => $r['barcode_scanned_timestamp'],
-            'displacement_timestamp' => $r['displacement_timestamp'],
+            'barcode_scanned_at' => $r['barcode_scanned_timestamp'] > 0 ? date('Y-m-d H:i:s', $r['barcode_scanned_timestamp']) : null,
+            'displaced_at' => $r['displacement_timestamp'] > 0 ? date('Y-m-d H:i:s', $r['displacement_timestamp']) : null,
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
     }
 
@@ -261,6 +278,8 @@ class ImportLegacyData extends Command
             'condition_id' => $r['condition_id'],
             'shop_id' => $r['shop_id'],
             'price' => $r['price'],
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
     }
 
@@ -270,10 +289,11 @@ class ImportLegacyData extends Command
             'id' => $r['id'],
             'parent_shop_id' => $r['parent_shop_id'],
             'contact_id' => $r['contact_id'],
-            'added_timestamp' => $r['added_timestamp'],
             'valid' => $r['valid'],
             'payment_method' => $r['payment_method'],
             'invoice_number' => $r['invoice_number'],
+            'created_at' => $r['added_timestamp'] ? date('Y-m-d H:i:s', $r['added_timestamp']) : now(),
+            'updated_at' => $r['added_timestamp'] ? date('Y-m-d H:i:s', $r['added_timestamp']) : now(),
         ]);
     }
 
@@ -285,6 +305,8 @@ class ImportLegacyData extends Command
             'item_id' => $r['item_id'],
             'tax_id' => $r['tax_id'],
             'price' => $r['price'],
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
     }
 
@@ -293,9 +315,10 @@ class ImportLegacyData extends Command
         $this->importChunked('Sells', 'sells', 'sells', fn ($r) => [
             'id' => $r['id'],
             'parent_shop_id' => $r['parent_shop_id'],
-            'added_timestamp' => $r['added_timestamp'],
             'valid' => $r['valid'],
             'payment_method' => $r['payment_method'],
+            'created_at' => $r['added_timestamp'] ? date('Y-m-d H:i:s', $r['added_timestamp']) : now(),
+            'updated_at' => $r['added_timestamp'] ? date('Y-m-d H:i:s', $r['added_timestamp']) : now(),
         ]);
     }
 
@@ -310,6 +333,8 @@ class ImportLegacyData extends Command
             'internal_cost' => $r['internal_cost'] ?? 0,
             'tax_id' => $r['tax_id'],
             'valid' => $r['valid'],
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
     }
 
@@ -319,9 +344,10 @@ class ImportLegacyData extends Command
             'id' => $r['id'],
             'parent_shop_id' => $r['parent_shop_id'],
             'target_shop_id' => $r['target_shop_id'],
-            'added_timestamp' => $r['added_timestamp'],
-            'finished_timestamp' => $r['finished_timestamp'],
             'status' => $r['status'],
+            'finished_at' => $r['finished_timestamp'] > 0 ? date('Y-m-d H:i:s', $r['finished_timestamp']) : null,
+            'created_at' => $r['added_timestamp'] ? date('Y-m-d H:i:s', $r['added_timestamp']) : now(),
+            'updated_at' => $r['added_timestamp'] ? date('Y-m-d H:i:s', $r['added_timestamp']) : now(),
         ]);
     }
 
@@ -331,6 +357,8 @@ class ImportLegacyData extends Command
             'id' => $r['id'],
             'transfer_id' => $r['transfer_id'],
             'item_id' => $r['item_id'],
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
     }
 }

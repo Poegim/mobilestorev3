@@ -17,7 +17,7 @@ class Index extends Component
     public string $search = '';
     public string $status = '1';
     public string $category = '';
-    
+    public string $period = 'all';    
 
     public ?Shop $shop = null;
 
@@ -30,6 +30,11 @@ class Index extends Component
     public function categoryTree(): array
     {
         return $this->getCategoryTree();
+    }
+
+    public function updatedPeriod(): void
+    {
+        $this->resetPage();
     }
 
     public function updatedCategory(): void
@@ -111,6 +116,13 @@ class Index extends Component
             $query->whereHas('product', function ($q) {
                 $q->where('name', 'like', "%{$this->search}%");
             });
+        }
+
+        if ($this->period !== '' && $this->period !== 'all') {
+            $period = \App\Enums\Period::tryFrom($this->period);
+            if ($period && $period->startDate()) {
+                $query->where('displaced_at', '>=', $period->startDate());
+            }
         }
 
         $items = $query->orderByDesc('id')->paginate(25);

@@ -34,7 +34,7 @@
                 <flux:sidebar.item icon="shopping-cart" :href="route($routePrefix . 'sells.index', $shopParam)" :current="request()->routeIs('*sells.*')" wire:navigate>
                     Sprzedaż
                 </flux:sidebar.item>
-                <flux:sidebar.item icon="truck" :href="route($routePrefix . 'dashboard', $shopParam)" :current="request()->routeIs('*purchases.*')" wire:navigate>
+                <flux:sidebar.item icon="truck" :href="route($routePrefix . 'purchases.index', $shopParam)" :current="request()->routeIs('*purchases.*')" wire:navigate>
                     Zakupy
                 </flux:sidebar.item>
                 <flux:sidebar.item icon="arrows-right-left" :href="route($routePrefix . 'dashboard', $shopParam)" :current="request()->routeIs('*transfers.*')" wire:navigate>

@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Shop extends Model
 {
-    public $timestamps = false;
+    
     protected $fillable = [
         'name', 'email', 'phone', 'color',
         'address_city', 'address_postal_code', 'address_street',
