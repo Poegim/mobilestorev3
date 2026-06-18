@@ -6,6 +6,7 @@ use App\Enums\PaymentMethod;
 use App\Models\Sell;
 use App\Models\Shop;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -116,6 +117,93 @@ class Index extends Component
         };
     }
 
+    /**
+     * Apply shared filters to a sells query builder.
+     */
+    private function applyFilters($query)
+    {
+        if ($this->shop) {
+            $query->where('sells.parent_shop_id', $this->shop->id);
+        } else {
+            $user = auth()->user();
+            if (!$user->isAdmin()) {
+                $shopIds = $user->shops()->pluck('shops.id');
+                $query->whereIn('sells.parent_shop_id', $shopIds);
+            }
+        }
+
+        // Period filter
+        if ($this->period !== 'all') {
+            [$from, $to] = $this->getDateRange();
+            $query->whereBetween('sells.created_at', [$from, $to]);
+        }
+
+        if ($this->valid !== 'all') {
+            $query->where('sells.valid', (int) $this->valid);
+        }
+
+        if ($this->paymentMethod !== '') {
+            $query->where('sells.payment_method', (int) $this->paymentMethod);
+        }
+
+        if ($this->search !== '') {
+            $query->where(function ($q) {
+                $q->where('sells.id', $this->search)
+                  ->orWhereHas('soldItems.item.product', fn ($pq) =>
+                      $pq->where('name', 'like', "%{$this->search}%")
+                  );
+            });
+        }
+
+        return $query;
+    }
+
+    /**
+     * Summary: total revenue and breakdown by payment method.
+     * Runs a single aggregate query against the filtered sell set.
+     *
+     * @return array{total: int, count: int, byMethod: array<int, array{label: string, total: int, count: int}>}
+     */
+    #[Computed]
+    public function summary(): array
+    {
+        // Subquery: IDs of sells matching current filters
+        $filteredIds = $this->applyFilters(Sell::query())->select('sells.id');
+
+        $rows = DB::table('sells')
+            ->join('sells_items', 'sells_items.sell_id', '=', 'sells.id')
+            ->whereIn('sells.id', $filteredIds)
+            ->where('sells_items.valid', 1)
+            ->groupBy('sells.payment_method')
+            ->select([
+                'sells.payment_method',
+                DB::raw('SUM(sells_items.price) as total'),
+                DB::raw('COUNT(DISTINCT sells.id) as sell_count'),
+            ])
+            ->get();
+
+        $total = 0;
+        $count = 0;
+        $byMethod = [];
+
+        foreach ($rows as $row) {
+            $pm = PaymentMethod::tryFrom($row->payment_method);
+            $byMethod[$row->payment_method] = [
+                'label' => $pm?->label() ?? "#{$row->payment_method}",
+                'total' => (int) $row->total,
+                'count' => (int) $row->sell_count,
+            ];
+            $total += (int) $row->total;
+            $count += (int) $row->sell_count;
+        }
+
+        return [
+            'total' => $total,
+            'count' => $count,
+            'byMethod' => $byMethod,
+        ];
+    }
+
     public function render()
     {
         $query = Sell::query()
@@ -125,38 +213,7 @@ class Index extends Component
                 (SELECT COALESCE(SUM(price), 0) FROM sells_items WHERE sells_items.sell_id = sells.id AND sells_items.valid = 1) as total_price
             ');
 
-        if ($this->shop) {
-            $query->where('parent_shop_id', $this->shop->id);
-        } else {
-            $user = auth()->user();
-            if (!$user->isAdmin()) {
-                $shopIds = $user->shops()->pluck('shops.id');
-                $query->whereIn('parent_shop_id', $shopIds);
-            }
-        }
-
-        // Period filter
-        if ($this->period !== 'all') {
-            [$from, $to] = $this->getDateRange();
-            $query->whereBetween('created_at', [$from, $to]);
-        }
-
-        if ($this->valid !== 'all') {
-            $query->where('valid', (int) $this->valid);
-        }
-
-        if ($this->paymentMethod !== '') {
-            $query->where('payment_method', (int) $this->paymentMethod);
-        }
-
-        if ($this->search !== '') {
-            $query->where(function ($q) {
-                $q->where('id', $this->search)
-                  ->orWhereHas('soldItems.item.product', fn ($pq) =>
-                      $pq->where('name', 'like', "%{$this->search}%")
-                  );
-            });
-        }
+        $this->applyFilters($query);
 
         $sells = $query->orderByDesc('created_at')->paginate($this->perPage);
 

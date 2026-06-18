@@ -120,8 +120,11 @@ class Index extends Component
 
         if ($this->period !== '' && $this->period !== 'all') {
             $period = \App\Enums\Period::tryFrom($this->period);
-            if ($period && $period->startDate()) {
-                $query->where('displaced_at', '>=', $period->startDate());
+            if ($period) {
+                $range = $period->dateRange();
+                if ($range) {
+                    $query->whereBetween('displaced_at', $range);
+                }
             }
         }
 

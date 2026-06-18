@@ -14,7 +14,21 @@
         </div>
     </div>
 
-    
+    {{-- Summary strip --}}
+    @php $summary = $this->summary; @endphp
+    <div class="mb-4 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm">
+        <span class="font-semibold tabular-nums">
+            Σ {{ number_format($summary['total'] / 100, 2, ',', ' ') }} zł
+        </span>
+        <span class="text-zinc-400">|</span>
+        @foreach($summary['byMethod'] as $method)
+            <span class="flex items-center gap-1 text-zinc-600 dark:text-zinc-400">
+                {{ $method['label'] }}:
+                <span class="font-medium text-zinc-900 dark:text-zinc-100 tabular-nums">{{ number_format($method['total'] / 100, 2, ',', ' ') }} zł</span>
+                <span class="text-zinc-400 tabular-nums">({{ $method['count'] }})</span>
+            </span>
+        @endforeach
+    </div>
 
     <div class="mb-4 flex flex-wrap gap-3">
         <div class="flex-1 min-w-48">
@@ -94,7 +108,7 @@
                         @endif
                     </flux:table.cell>
                     <flux:table.cell class="text-zinc-500 text-sm">
-                        {{ \Carbon\Carbon::createFromTimestamp($sell->created_at)->format('d.m.Y H:i') }}
+                        {{ $sell->created_at->format('d.m.Y H:i') }}
                     </flux:table.cell>
                     <flux:table.cell>
                         @if($sell->valid)

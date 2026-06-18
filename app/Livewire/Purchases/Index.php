@@ -82,11 +82,14 @@ class Index extends Component
 
         // Filter by date period
         if ($this->period !== '' && $this->period !== 'all') {
-            $period = Period::tryFrom($this->period);
-            if ($period && $period->startDate()) {
-                $query->where('created_at', '>=', $period->startDate());
+        $period = Period::tryFrom($this->period);
+        if ($period) {
+            $range = $period->dateRange();
+            if ($range) {
+                $query->whereBetween('created_at', $range);
             }
         }
+    }
 
         $purchases = $query->paginate(25);
 

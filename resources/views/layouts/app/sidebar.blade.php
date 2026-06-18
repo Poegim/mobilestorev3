@@ -15,7 +15,6 @@
                 <x-shop-switcher />
             </flux:sidebar.nav>
 
-
             <flux:separator />
 
             <flux:sidebar.nav>

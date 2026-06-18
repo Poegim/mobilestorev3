@@ -1,217 +1,161 @@
 <div>
-    <div class="mb-6">
-        <flux:heading size="xl">
-            Dashboard {{ $shop ? '— ' . $shop->name : '' }}
-        </flux:heading>
+    {{-- Header: date + shop name --}}
+    <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between mb-6">
+        <div>
+            <flux:text class="text-xs uppercase tracking-wide">
+                {{ now()->translatedFormat('l, j F Y') }}
+            </flux:text>
+            <flux:heading size="xl">
+                {{ $shop ? $shop->name : 'Wszystkie sklepy' }}
+            </flux:heading>
+        </div>
     </div>
 
-    {{-- Main stats --}}
-    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-        <flux:card>
-            <flux:subheading>Na magazynie</flux:subheading>
-            <div class="mt-2 text-3xl font-bold">{{ number_format($itemsInStock, 0, ',', ' ') }}</div>
-            <flux:text class="mt-1">przedmiotów</flux:text>
-        </flux:card>
+    @if($isAdmin)
+        {{-- ===== ADMIN: revenue scorecard + month panel ===== --}}
+        <div class="grid gap-4 lg:grid-cols-[1fr_280px] mb-6">
 
-        <flux:card>
-            <flux:subheading>Sprzedaż dziś</flux:subheading>
-            <div class="mt-2 text-3xl font-bold">{{ number_format($todayRevenue / 100, 2, ',', ' ') }} zł</div>
-            <flux:text class="mt-1">{{ $todaySells }} {{ $todaySells === 1 ? 'transakcja' : 'transakcji' }}</flux:text>
-        </flux:card>
+            {{-- LEFT — Today's revenue scorecard --}}
+            <flux:card>
+                <flux:text class="text-xs uppercase tracking-wide">Obrót dziś</flux:text>
+                <div class="mt-1 text-4xl font-medium text-zinc-900 dark:text-zinc-50 leading-none">
+                    {{ number_format($todayRevenue / 100, 2, ',', ' ') }} zł
+                </div>
+                <flux:text class="mt-1 text-sm">
+                    {{ $todaySells }} {{ $todaySells === 1 ? 'transakcja' : 'transakcji' }}
+                </flux:text>
 
-        <flux:card>
-            <flux:subheading>Sprzedaż ten miesiąc</flux:subheading>
-            <div class="mt-2 text-3xl font-bold">{{ number_format($monthRevenue / 100, 2, ',', ' ') }} zł</div>
-            <flux:text class="mt-1">{{ $monthSells }} transakcji</flux:text>
-        </flux:card>
+                {{-- Category breakdown bars --}}
+                @php
+                    $totalRevenue = max(
+                        ($todayCategories['devices']['revenue'] ?? 0)
+                        + ($todayCategories['accessories']['revenue'] ?? 0)
+                        + ($todayCategories['services']['revenue'] ?? 0),
+                        1
+                    );
+                @endphp
 
-        <flux:card>
-            <flux:subheading>Zakupy dziś</flux:subheading>
-            <div class="mt-2 text-3xl font-bold">{{ $todayPurchases }}</div>
-            <flux:text class="mt-1">przyjęć towaru</flux:text>
-        </flux:card>
-    </div>
+                <div class="mt-6 space-y-4">
+                    <x-dashboard-category-bar
+                        icon="device-phone-mobile"
+                        label="Urządzenia"
+                        :revenue="$todayCategories['devices']['revenue'] ?? 0"
+                        :count="$todayCategories['devices']['count'] ?? 0"
+                        :profit="$todayCategories['devices']['profit'] ?? null"
+                        :percentage="round(($todayCategories['devices']['revenue'] ?? 0) / $totalRevenue * 100)"
+                        color="bg-purple-500 dark:bg-purple-400"
+                    />
 
-    {{-- Today category stats --}}
-    <div class="mb-8">
-        @if($showTodayStats)
-            <flux:heading size="lg" class="mb-4">Dziś — podział na kategorie</flux:heading>
-            <div class="grid gap-4 md:grid-cols-3 {{ $isAdmin ? 'lg:grid-cols-4' : '' }}">
-                <flux:card>
-                    <flux:subheading>Urządzenia</flux:subheading>
-                    <div class="mt-2 text-2xl font-bold">{{ number_format($todayCategories['devices']['revenue'] / 100, 2, ',', ' ') }} zł</div>
-                    <flux:text class="mt-1">{{ $todayCategories['devices']['count'] }} szt.</flux:text>
-                    @if($isAdmin && isset($todayCategories['devices']['profit']))
-                        <div class="mt-2 text-sm {{ $todayCategories['devices']['profit'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                            Zysk: {{ number_format($todayCategories['devices']['profit'] / 100, 2, ',', ' ') }} zł
-                        </div>
-                    @endif
-                </flux:card>
+                    <x-dashboard-category-bar
+                        icon="shopping-bag"
+                        label="Akcesoria"
+                        :revenue="$todayCategories['accessories']['revenue'] ?? 0"
+                        :count="$todayCategories['accessories']['count'] ?? 0"
+                        :profit="$todayCategories['accessories']['profit'] ?? null"
+                        :percentage="round(($todayCategories['accessories']['revenue'] ?? 0) / $totalRevenue * 100)"
+                        color="bg-teal-500 dark:bg-teal-400"
+                    />
 
-                <flux:card>
-                    <flux:subheading>Akcesoria</flux:subheading>
-                    <div class="mt-2 text-2xl font-bold">{{ number_format($todayCategories['accessories']['revenue'] / 100, 2, ',', ' ') }} zł</div>
-                    <flux:text class="mt-1">{{ $todayCategories['accessories']['count'] }} szt.</flux:text>
-                    @if($isAdmin && isset($todayCategories['accessories']['profit']))
-                        <div class="mt-2 text-sm {{ $todayCategories['accessories']['profit'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                            Zysk: {{ number_format($todayCategories['accessories']['profit'] / 100, 2, ',', ' ') }} zł
-                        </div>
-                    @endif
-                </flux:card>
+                    <x-dashboard-category-bar
+                        icon="wrench-screwdriver"
+                        label="Usługi"
+                        :revenue="$todayCategories['services']['revenue'] ?? 0"
+                        :count="$todayCategories['services']['count'] ?? 0"
+                        :profit="$todayCategories['services']['profit'] ?? null"
+                        :percentage="round(($todayCategories['services']['revenue'] ?? 0) / $totalRevenue * 100)"
+                        color="bg-orange-500 dark:bg-orange-400"
+                    />
+                </div>
 
-                <flux:card>
-                    <flux:subheading>Usługi</flux:subheading>
-                    <div class="mt-2 text-2xl font-bold">{{ number_format($todayCategories['services']['revenue'] / 100, 2, ',', ' ') }} zł</div>
-                    <flux:text class="mt-1">{{ $todayCategories['services']['count'] }} szt.</flux:text>
-                    @if($isAdmin && isset($todayCategories['services']['profit']))
-                        <div class="mt-2 text-sm {{ $todayCategories['services']['profit'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                            Zysk: {{ number_format($todayCategories['services']['profit'] / 100, 2, ',', ' ') }} zł
-                        </div>
-                    @endif
-                </flux:card>
-
-                @if($isAdmin && isset($todayCategories['totalProfit']))
-                    <flux:card class="border-2 border-green-200 dark:border-green-800">
-                        <flux:subheading>Zysk łączny dziś</flux:subheading>
-                        <div class="mt-2 text-2xl font-bold {{ $todayCategories['totalProfit'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                            {{ number_format($todayCategories['totalProfit'] / 100, 2, ',', ' ') }} zł
-                        </div>
-                    </flux:card>
+                {{-- Total profit --}}
+                @if(isset($todayCategories['totalProfit']))
+                    <div class="mt-5 pt-4 border-t border-zinc-200 dark:border-zinc-700 flex items-baseline justify-between">
+                        <flux:text class="text-sm">Zysk łączny dziś</flux:text>
+                        <span class="text-lg font-medium {{ $todayCategories['totalProfit'] >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400' }}">
+                            {{ $todayCategories['totalProfit'] >= 0 ? '+' : '' }}{{ number_format($todayCategories['totalProfit'] / 100, 2, ',', ' ') }} zł
+                        </span>
+                    </div>
                 @endif
+            </flux:card>
+
+            {{-- RIGHT — Month summary + compact stats --}}
+            <div class="flex flex-col gap-4">
+
+                {{-- Month summary --}}
+                <flux:card>
+                    <flux:text class="text-xs uppercase tracking-wide">
+                        {{ now()->translatedFormat('F') }}
+                    </flux:text>
+                    <div class="mt-1 text-2xl font-medium text-zinc-900 dark:text-zinc-50 leading-none">
+                        {{ number_format($monthRevenue / 100, 2, ',', ' ') }} zł
+                    </div>
+                    <flux:text class="mt-1 text-sm">{{ $monthSells }} transakcji</flux:text>
+
+                    <div class="mt-4 space-y-2">
+                        <x-dashboard-category-row
+                            icon="device-phone-mobile"
+                            label="Urządzenia"
+                            :revenue="$monthCategories['devices']['revenue'] ?? 0"
+                        />
+                        <x-dashboard-category-row
+                            icon="shopping-bag"
+                            label="Akcesoria"
+                            :revenue="$monthCategories['accessories']['revenue'] ?? 0"
+                        />
+                        <x-dashboard-category-row
+                            icon="wrench-screwdriver"
+                            label="Usługi"
+                            :revenue="$monthCategories['services']['revenue'] ?? 0"
+                        />
+                    </div>
+
+                    @if(isset($monthCategories['totalProfit']))
+                        <div class="mt-3 pt-3 border-t border-zinc-200 dark:border-zinc-700 flex items-baseline justify-between">
+                            <flux:text class="text-xs">Zysk</flux:text>
+                            <span class="text-base font-medium {{ $monthCategories['totalProfit'] >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400' }}">
+                                {{ $monthCategories['totalProfit'] >= 0 ? '+' : '' }}{{ number_format($monthCategories['totalProfit'] / 100, 2, ',', ' ') }} zł
+                            </span>
+                        </div>
+                    @endif
+                </flux:card>
+
+                {{-- Stock count --}}
+                <div class="rounded-lg bg-zinc-50 dark:bg-zinc-800/60 px-4 py-3">
+                    <flux:text class="text-sm">Na magazynie</flux:text>
+                    <div class="text-2xl font-medium text-zinc-900 dark:text-zinc-50 leading-none mt-1">
+                        {{ number_format($itemsInStock, 0, ',', ' ') }}
+                    </div>
+                    <flux:text class="text-xs mt-0.5">przedmiotów</flux:text>
+                </div>
+
+                {{-- Today purchases --}}
+                <div class="rounded-lg bg-zinc-50 dark:bg-zinc-800/60 px-4 py-3">
+                    <flux:text class="text-sm">Zakupy dziś</flux:text>
+                    <div class="text-2xl font-medium text-zinc-900 dark:text-zinc-50 leading-none mt-1">
+                        {{ $todayPurchases }}
+                    </div>
+                    <flux:text class="text-xs mt-0.5">przyjęć towaru</flux:text>
+                </div>
             </div>
-        @else
-            <flux:button wire:click="loadTodayStats" variant="subtle" wire:loading.attr="disabled">
-                <span wire:loading.remove wire:target="loadTodayStats">Pokaż statystyki dnia</span>
-                <span wire:loading wire:target="loadTodayStats">Ładowanie...</span>
-            </flux:button>
+        </div>
+    @endif
+
+    {{-- ===== SHOP STATS — visible to everyone ===== --}}
+    <div class="{{ $isAdmin ? '' : '' }}">
+        @if($isAdmin && !$shop)
+            <flux:heading size="lg" class="mb-3">Sklepy — ilości</flux:heading>
         @endif
-    </div>
 
-    {{-- Month category stats --}}
-    <div class="mb-8">
-        @if($showMonthStats)
-            <flux:heading size="lg" class="mb-4">Ten miesiąc — podział na kategorie</flux:heading>
-            <div class="grid gap-4 md:grid-cols-3 {{ $isAdmin ? 'lg:grid-cols-4' : '' }}">
-                <flux:card>
-                    <flux:subheading>Urządzenia</flux:subheading>
-                    <div class="mt-2 text-2xl font-bold">{{ number_format($monthCategories['devices']['revenue'] / 100, 2, ',', ' ') }} zł</div>
-                    <flux:text class="mt-1">{{ $monthCategories['devices']['count'] }} szt.</flux:text>
-                    @if($isAdmin && isset($monthCategories['devices']['profit']))
-                        <div class="mt-2 text-sm {{ $monthCategories['devices']['profit'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                            Zysk: {{ number_format($monthCategories['devices']['profit'] / 100, 2, ',', ' ') }} zł
-                        </div>
-                    @endif
-                </flux:card>
-
-                <flux:card>
-                    <flux:subheading>Akcesoria</flux:subheading>
-                    <div class="mt-2 text-2xl font-bold">{{ number_format($monthCategories['accessories']['revenue'] / 100, 2, ',', ' ') }} zł</div>
-                    <flux:text class="mt-1">{{ $monthCategories['accessories']['count'] }} szt.</flux:text>
-                    @if($isAdmin && isset($monthCategories['accessories']['profit']))
-                        <div class="mt-2 text-sm {{ $monthCategories['accessories']['profit'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                            Zysk: {{ number_format($monthCategories['accessories']['profit'] / 100, 2, ',', ' ') }} zł
-                        </div>
-                    @endif
-                </flux:card>
-
-                <flux:card>
-                    <flux:subheading>Usługi</flux:subheading>
-                    <div class="mt-2 text-2xl font-bold">{{ number_format($monthCategories['services']['revenue'] / 100, 2, ',', ' ') }} zł</div>
-                    <flux:text class="mt-1">{{ $monthCategories['services']['count'] }} szt.</flux:text>
-                    @if($isAdmin && isset($monthCategories['services']['profit']))
-                        <div class="mt-2 text-sm {{ $monthCategories['services']['profit'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                            Zysk: {{ number_format($monthCategories['services']['profit'] / 100, 2, ',', ' ') }} zł
-                        </div>
-                    @endif
-                </flux:card>
-
-                @if($isAdmin && isset($monthCategories['totalProfit']))
-                    <flux:card class="border-2 border-green-200 dark:border-green-800">
-                        <flux:subheading>Zysk łączny miesiąc</flux:subheading>
-                        <div class="mt-2 text-2xl font-bold {{ $monthCategories['totalProfit'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                            {{ number_format($monthCategories['totalProfit'] / 100, 2, ',', ' ') }} zł
-                        </div>
-                    </flux:card>
-                @endif
-            </div>
-        @else
-            <flux:button wire:click="loadMonthStats" variant="subtle" wire:loading.attr="disabled">
-                <span wire:loading.remove wire:target="loadMonthStats">Pokaż statystyki miesiąca</span>
-                <span wire:loading wire:target="loadMonthStats">Ładowanie...</span>
-            </flux:button>
-        @endif
-    </div>
-
-    {{-- Recent tables --}}
-    <div class="grid gap-6 lg:grid-cols-2">
-        <flux:card>
-            <flux:heading size="lg" class="mb-4">Ostatnie sprzedaże</flux:heading>
-            <flux:table>
-                <flux:table.columns>
-                    <flux:table.column>ID</flux:table.column>
-                    <flux:table.column>Data</flux:table.column>
-                    @if(!$shop)
-                        <flux:table.column>Sklep</flux:table.column>
-                    @endif
-                    <flux:table.column>Pozycje</flux:table.column>
-                    <flux:table.column>Kwota</flux:table.column>
-                </flux:table.columns>
-                <flux:table.rows>
-                    @forelse($recentSells as $sell)
-                        <flux:table.row>
-                            <flux:table.cell>#{{ $sell->id }}</flux:table.cell>
-                            <flux:table.cell>{{ $sell->created_at->format('d.m.Y H:i') }}</flux:table.cell>
-                            @if(!$shop)
-                                <flux:table.cell>{{ $sell->shop->name ?? '-' }}</flux:table.cell>
-                            @endif
-                            <flux:table.cell>{{ $sell->soldItems->count() }}</flux:table.cell>
-                            <flux:table.cell class="font-medium">
-                                {{ number_format($sell->soldItems->sum('price') / 100, 2, ',', ' ') }} zł
-                            </flux:table.cell>
-                        </flux:table.row>
-                    @empty
-                        <flux:table.row>
-                            <flux:table.cell colspan="{{ $shop ? 4 : 5 }}" class="text-center text-zinc-500">
-                                Brak sprzedaży
-                            </flux:table.cell>
-                        </flux:table.row>
-                    @endforelse
-                </flux:table.rows>
-            </flux:table>
-        </flux:card>
-
-        <flux:card>
-            <flux:heading size="lg" class="mb-4">Ostatnie zakupy</flux:heading>
-            <flux:table>
-                <flux:table.columns>
-                    <flux:table.column>ID</flux:table.column>
-                    <flux:table.column>Data</flux:table.column>
-                    @if(!$shop)
-                        <flux:table.column>Sklep</flux:table.column>
-                    @endif
-                    <flux:table.column>Dostawca</flux:table.column>
-                    <flux:table.column>Pozycje</flux:table.column>
-                </flux:table.columns>
-                <flux:table.rows>
-                    @forelse($recentPurchases as $purchase)
-                        <flux:table.row>
-                            <flux:table.cell>#{{ $purchase->id }}</flux:table.cell>
-                            <flux:table.cell>{{ $purchase->created_at->format('d.m.Y H:i') }}</flux:table.cell>
-                            @if(!$shop)
-                                <flux:table.cell>{{ $purchase->shop->name ?? '-' }}</flux:table.cell>
-                            @endif
-                            <flux:table.cell>{{ Str::limit($purchase->contact->name ?? '-', 20) }}</flux:table.cell>
-                            <flux:table.cell>{{ $purchase->purchasedItems->count() }}</flux:table.cell>
-                        </flux:table.row>
-                    @empty
-                        <flux:table.row>
-                            <flux:table.cell colspan="{{ $shop ? 4 : 5 }}" class="text-center text-zinc-500">
-                                Brak zakupów
-                            </flux:table.cell>
-                        </flux:table.row>
-                    @endforelse
-                </flux:table.rows>
-            </flux:table>
-        </flux:card>
+        <div class="grid gap-3 {{ $shop ? '' : 'sm:grid-cols-2' }}">
+            @foreach($shopStats as $stat)
+                <x-dashboard-shop-card
+                    :shop-name="$stat['shop']->name"
+                    :shop-color="$stat['shop']->color"
+                    :stock="$stat['stock']"
+                    :today="$stat['today']"
+                    :month="$stat['month']"
+                />
+            @endforeach
+        </div>
     </div>
 </div>
