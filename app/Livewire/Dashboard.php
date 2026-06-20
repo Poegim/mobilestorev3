@@ -24,6 +24,21 @@ class Dashboard extends Component
     private ?array $shopIds = null;
     private ?array $descendantCache = [];
 
+    #[Computed]
+    public function shopRanking(): array
+    {
+        return $this->getUserShops()
+            ->map(fn (Shop $shop) => [
+                'name'         => $shop->name,
+                'color'        => $shop->color,
+                'revenue'      => $this->getRevenueForShop($shop, $this->leaderboardPeriod),
+                'transactions' => $this->getTransactionsForShop($shop, $this->leaderboardPeriod),
+            ])
+            ->sortByDesc('revenue')
+            ->values()
+            ->all();
+    }
+
     public function mount(?Shop $shop = null): void
     {
         $this->shop = $shop;
@@ -283,6 +298,10 @@ class Dashboard extends Component
 
         return $this->descendantCache[$parentId] = $ids;
     }
+
+
+    public string $leaderboardPeriod = 'month';
+
 
     public function render()
     {

@@ -158,4 +158,7 @@
             @endforeach
         </div>
     </div>
+    <div class="mt-6">  
+        <livewire:top-products :shop="$shop" />
+    </div>
 </div>
