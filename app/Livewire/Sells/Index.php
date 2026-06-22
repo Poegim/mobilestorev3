@@ -2,7 +2,9 @@
 
 namespace App\Livewire\Sells;
 
+use App\Enums\ItemStatus;
 use App\Enums\PaymentMethod;
+use App\Models\Item;
 use App\Models\Sell;
 use App\Models\Shop;
 use Carbon\Carbon;
@@ -204,6 +206,65 @@ class Index extends Component
         ];
     }
 
+    /**
+     * Build a remaining-stock lookup for sold items on the current page.
+     * Returns ["product_id:shop_id" => remaining_count].
+     *
+     * @param  \Illuminate\Support\Collection  $sells
+     * @return array<string, int>
+     */
+    private function buildStockMap($sells): array
+    {
+        // Collect unique (product_id, shop_id) pairs from sold items
+        $pairs = collect();
+
+        foreach ($sells as $sell) {
+            foreach ($sell->soldItems as $si) {
+                if ($si->item?->product_id) {
+                    $pairs->push([
+                        'product_id' => $si->item->product_id,
+                        'shop_id'    => $sell->parent_shop_id,
+                    ]);
+                }
+            }
+        }
+
+        $pairs = $pairs->unique(fn ($p) => $p['product_id'] . ':' . $p['shop_id']);
+
+        if ($pairs->isEmpty()) {
+            return [];
+        }
+
+        // Single query: count items still in store, grouped by product + shop
+        $counts = Item::where('status', ItemStatus::Store)
+            ->where(function ($q) use ($pairs) {
+                foreach ($pairs as $pair) {
+                    $q->orWhere(fn ($sq) => $sq
+                        ->where('product_id', $pair['product_id'])
+                        ->where('parent_shop_id', $pair['shop_id'])
+                    );
+                }
+            })
+            ->groupBy('product_id', 'parent_shop_id')
+            ->select('product_id', 'parent_shop_id', DB::raw('COUNT(*) as remaining'))
+            ->get();
+
+        $map = [];
+        foreach ($counts as $row) {
+            $map[$row->product_id . ':' . $row->parent_shop_id] = (int) $row->remaining;
+        }
+
+        // Pairs with zero remaining won't appear in the query result — fill them in
+        foreach ($pairs as $pair) {
+            $key = $pair['product_id'] . ':' . $pair['shop_id'];
+            if (!isset($map[$key])) {
+                $map[$key] = 0;
+            }
+        }
+
+        return $map;
+    }
+
     public function render()
     {
         $query = Sell::query()
@@ -218,7 +279,8 @@ class Index extends Component
         $sells = $query->orderByDesc('created_at')->paginate($this->perPage);
 
         return view('livewire.sells.index', [
-            'sells' => $sells,
+            'sells'    => $sells,
+            'stockMap' => $this->buildStockMap($sells),
         ]);
     }
 }

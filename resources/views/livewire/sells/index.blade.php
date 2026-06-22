@@ -80,10 +80,40 @@
                     <flux:table.cell variant="strong">{{ $sell->id }}</flux:table.cell>
                     <flux:table.cell>
                         @foreach($sell->soldItems as $si)
-                            <div class="flex justify-between gap-4 text-sm leading-tight {{ !$loop->first ? 'mt-0.5' : '' }}">
-                                <span>
+                            <div class="flex items-center justify-between gap-4 text-sm group leading-tight {{ !$loop->first ? 'mt-0.5' : '' }}">
+                                <span class="flex items-center gap-1.5 min-w-0">
                                     @if($si->item?->product)
-                                        {{ $si->item->product->brand?->name }} {{ $si->item->product->name }}
+                                        <span class="truncate">{{ $si->item->product->brand?->name }} {{ $si->item->product->name }}</span>
+                                        <button
+                                            type="button"
+                                            x-data="{ copied: false }"
+                                            x-on:click="
+                                                navigator.clipboard.writeText(@js($si->item->product->name));
+                                                copied = true;
+                                                setTimeout(() => copied = false, 1500)
+                                            "
+                                            class="cursor-pointer text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+                                            title="Kopiuj nazwę"
+                                        >
+                                            <span x-show="!copied">
+                                                <flux:icon.document-duplicate variant="micro" class="size-3.5" />
+                                            </span>
+
+                                            <span x-show="copied" x-cloak>
+                                                <flux:icon.check variant="micro" class="size-3.5 text-emerald-500" />
+                                            </span>
+                                        </button>
+
+                                        {{-- Low stock indicator --}}
+                                        @php
+                                            $stockKey = $si->item->product_id . ':' . $sell->parent_shop_id;
+                                            $remaining = $stockMap[$stockKey] ?? null;
+                                        @endphp
+                                        @if($remaining === 0)
+                                            <flux:badge size="sm" color="red" class="shrink-0">Ostatnia!</flux:badge>
+                                        @elseif($remaining === 1)
+                                            <flux:badge size="sm" color="amber" class="shrink-0">Zostaje 1 szt.</flux:badge>
+                                        @endif
                                     @elseif($si->service_id)
                                         <span class="italic text-zinc-400">Usługa #{{ $si->service_id }}</span>
                                     @endif

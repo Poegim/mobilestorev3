@@ -24,6 +24,9 @@ class Dashboard extends Component
     private ?array $shopIds = null;
     private ?array $descendantCache = [];
 
+    /** @var array<int, int[]>|null  Children map built once from full category table */
+    private ?array $childrenMap = null;
+
     #[Computed]
     public function shopRanking(): array
     {
@@ -283,17 +286,36 @@ class Dashboard extends Component
 
     // endregion
 
+    /**
+     * Resolve all descendant category IDs for a root category.
+     * Loads the ENTIRE category tree in 1 query on first call,
+     * then resolves descendants in PHP via iterative stack traversal.
+     * Replaces the old recursive version that did 40+ individual queries.
+     */
     private function getDescendantCategoryIds(int $parentId): array
     {
         if (isset($this->descendantCache[$parentId])) {
             return $this->descendantCache[$parentId];
         }
 
-        $ids = [$parentId];
-        $children = Category::where('parent_category_id', $parentId)->pluck('id')->toArray();
+        // Build children map once (1 query instead of 40+)
+        if ($this->childrenMap === null) {
+            $this->childrenMap = [];
+            foreach (Category::pluck('parent_category_id', 'id') as $id => $pid) {
+                $this->childrenMap[$pid][] = $id;
+            }
+        }
 
-        foreach ($children as $childId) {
-            $ids = array_merge($ids, $this->getDescendantCategoryIds($childId));
+        // Iterative DFS instead of recursion
+        $ids = [$parentId];
+        $stack = [$parentId];
+
+        while ($stack) {
+            $current = array_pop($stack);
+            foreach ($this->childrenMap[$current] ?? [] as $childId) {
+                $ids[] = $childId;
+                $stack[] = $childId;
+            }
         }
 
         return $this->descendantCache[$parentId] = $ids;

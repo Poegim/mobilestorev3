@@ -14,7 +14,7 @@ class TopProducts extends Component
     public ?Shop $shop = null;
 
     public int $topLimit = 10;
-    public int $trendingLimit = 5;
+    public int $trendingLimit = 10;
 
     public function mount(?Shop $shop = null): void
     {
