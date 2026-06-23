@@ -18,36 +18,106 @@ class Dashboard extends Component
 {
     public ?Shop $shop = null;
 
+    // region Lazy-load flags
+
+    /** Revenue breakdown loaded (admin only) */
+    public bool $revenueLoaded = false;
+
+    /** Per-shop stats loaded */
+    public bool $shopStatsLoaded = false;
+
+    /** Top products & trending loaded */
+    public bool $topProductsLoaded = false;
+
+    // endregion
+
+    // region Lazy-loaded data (persisted in component state)
+
+    public int $todayRevenue = 0;
+    public int $todaySells = 0;
+    public int $monthRevenue = 0;
+    public int $monthSells = 0;
+
     public array $todayCategories = [];
     public array $monthCategories = [];
+
+    public array $shopStats = [];
+
+    // endregion
 
     private ?array $shopIds = null;
     private ?array $descendantCache = [];
 
-    /** @var array<int, int[]>|null  Children map built once from full category table */
-    private ?array $childrenMap = null;
-
-    #[Computed]
-    public function shopRanking(): array
-    {
-        return $this->getUserShops()
-            ->map(fn (Shop $shop) => [
-                'name'         => $shop->name,
-                'color'        => $shop->color,
-                'revenue'      => $this->getRevenueForShop($shop, $this->leaderboardPeriod),
-                'transactions' => $this->getTransactionsForShop($shop, $this->leaderboardPeriod),
-            ])
-            ->sortByDesc('revenue')
-            ->values()
-            ->all();
-    }
-
     public function mount(?Shop $shop = null): void
     {
         $this->shop = $shop;
-        $this->todayCategories = $this->getCategoryStats(Carbon::today());
-        $this->monthCategories = $this->getCategoryStats(Carbon::now()->startOfMonth(), now());
+
+        // Instant: lightweight counts only
+        $today = Carbon::today();
+
+        $this->todaySells = $this->scopeShop(
+            Sell::where('valid', 1)
+                ->whereBetween('created_at', [$today->startOfDay(), $today->copy()->endOfDay()])
+        )->count();
+
+        $this->todayRevenue = 0;
+        $this->monthRevenue = 0;
+        $this->monthSells = 0;
     }
+
+    // region Lazy-load actions
+
+    /**
+     * Load full revenue breakdown with category stats (admin).
+     * Called on button click — heaviest query set.
+     */
+    public function loadRevenueStats(): void
+    {
+        $today = Carbon::today();
+        $thisMonth = Carbon::now()->startOfMonth();
+
+        $this->todayRevenue = $this->soldItemsQuery($today)->sum('sells_items.price');
+        $this->todayCategories = $this->getCategoryStats($today);
+
+        $this->monthRevenue = $this->soldItemsQuery($thisMonth, now())->sum('sells_items.price');
+        $this->monthSells = $this->scopeShop(
+            Sell::where('valid', 1)->where('created_at', '>=', $thisMonth)
+        )->count();
+        $this->monthCategories = $this->getCategoryStats($thisMonth, now());
+
+        $this->revenueLoaded = true;
+    }
+
+    /**
+     * Load per-shop quantity stats.
+     * Moderate cost — loops over shops with COUNT queries.
+     */
+    public function loadShopStats(): void
+    {
+        $stats = $this->getPerShopCountStats();
+
+        // Transform to plain arrays for Livewire serialization
+        $this->shopStats = $stats->map(fn ($stat) => [
+            'shopName'  => $stat['shop']->name,
+            'shopColor' => $stat['shop']->color,
+            'stock'     => $stat['stock'],
+            'today'     => $stat['today'],
+            'month'     => $stat['month'],
+        ])->values()->toArray();
+
+        $this->shopStatsLoaded = true;
+    }
+
+    /**
+     * Reveal top products section.
+     * The actual queries run inside the TopProducts child component on mount.
+     */
+    public function loadTopProducts(): void
+    {
+        $this->topProductsLoaded = true;
+    }
+
+    // endregion
 
     // region Scoping helpers
 
@@ -186,8 +256,8 @@ class Dashboard extends Component
         $shops = $this->shop
             ? collect([$this->shop])
             : ($user->isAdmin()
-                ? Shop::where('archive', false)->where('id', '!=', 8)->orderBy('id')->where('id', '!=', 8)->get()
-                : $user->shops()->where('archive', false)->where('shops.id', '!=', 8)->orderBy('shops.id')->get());
+                ? Shop::where('archive', false)->orderBy('order')->get()
+                : $user->shops()->where('archive', false)->orderBy('order')->get());
 
         $today = Carbon::today();
         $thisMonth = Carbon::now()->startOfMonth();
@@ -196,20 +266,25 @@ class Dashboard extends Component
         $accessoryCategoryIds = $this->getDescendantCategoryIds(3);
 
         return $shops->map(function (Shop $shop) use ($today, $thisMonth, $deviceCategoryIds, $accessoryCategoryIds) {
-            // Today's transaction count
-            $todayTransactions = Sell::where('valid', 1)
-                ->where('parent_shop_id', $shop->id)
-                ->whereBetween('created_at', [$today->copy()->startOfDay(), $today->copy()->endOfDay()])
+            $stock = Item::where('parent_shop_id', $shop->id)
+                ->where('status', ItemStatus::Store)
                 ->count();
 
-            // Today's sold items by category
+            // Today sold items for this shop
             $todaySoldItems = SoldItem::where('sells_items.valid', 1)
                 ->join('sells', fn ($j) => $j
                     ->on('sells.id', '=', 'sells_items.sell_id')
                     ->where('sells.valid', 1)
                     ->where('sells.parent_shop_id', $shop->id)
                 )
-                ->whereBetween('sells.created_at', [$today->copy()->startOfDay(), $today->copy()->endOfDay()]);
+                ->whereBetween('sells.created_at', [$today->startOfDay(), $today->copy()->endOfDay()]);
+
+            $todayTransactions = Sell::where('valid', 1)
+                ->where('parent_shop_id', $shop->id)
+                ->whereBetween('created_at', [$today->startOfDay(), $today->copy()->endOfDay()])
+                ->count();
+
+            $todayTotal = (clone $todaySoldItems)->count();
 
             $todayDevices = (clone $todaySoldItems)
                 ->where('sells_items.item_id', '>', 0)
@@ -225,15 +300,7 @@ class Dashboard extends Component
                 ->where('sells_items.service_id', '>', 0)
                 ->count();
 
-            $todayTotal = $todayDevices + $todayAccessories + $todayServices;
-
-            // Month transaction count
-            $monthTransactions = Sell::where('valid', 1)
-                ->where('parent_shop_id', $shop->id)
-                ->where('created_at', '>=', $thisMonth)
-                ->count();
-
-            // Month sold items by category
+            // Month sold items for this shop
             $monthSoldItems = SoldItem::where('sells_items.valid', 1)
                 ->join('sells', fn ($j) => $j
                     ->on('sells.id', '=', 'sells_items.sell_id')
@@ -241,6 +308,13 @@ class Dashboard extends Component
                     ->where('sells.parent_shop_id', $shop->id)
                 )
                 ->where('sells.created_at', '>=', $thisMonth);
+
+            $monthTransactions = Sell::where('valid', 1)
+                ->where('parent_shop_id', $shop->id)
+                ->where('created_at', '>=', $thisMonth)
+                ->count();
+
+            $monthTotal = (clone $monthSoldItems)->count();
 
             $monthDevices = (clone $monthSoldItems)
                 ->where('sells_items.item_id', '>', 0)
@@ -256,16 +330,9 @@ class Dashboard extends Component
                 ->where('sells_items.service_id', '>', 0)
                 ->count();
 
-            $monthTotal = $monthDevices + $monthAccessories + $monthServices;
-
-            // Stock count
-            $stockCount = Item::where('status', ItemStatus::Store)
-                ->where('parent_shop_id', $shop->id)
-                ->count();
-
             return [
                 'shop' => $shop,
-                'stock' => $stockCount,
+                'stock' => $stock,
                 'today' => [
                     'transactions' => $todayTransactions,
                     'items' => $todayTotal,
@@ -286,83 +353,37 @@ class Dashboard extends Component
 
     // endregion
 
-    /**
-     * Resolve all descendant category IDs for a root category.
-     * Loads the ENTIRE category tree in 1 query on first call,
-     * then resolves descendants in PHP via iterative stack traversal.
-     * Replaces the old recursive version that did 40+ individual queries.
-     */
     private function getDescendantCategoryIds(int $parentId): array
     {
         if (isset($this->descendantCache[$parentId])) {
             return $this->descendantCache[$parentId];
         }
 
-        // Build children map once (1 query instead of 40+)
-        if ($this->childrenMap === null) {
-            $this->childrenMap = [];
-            foreach (Category::pluck('parent_category_id', 'id') as $id => $pid) {
-                $this->childrenMap[$pid][] = $id;
-            }
-        }
-
-        // Iterative DFS instead of recursion
         $ids = [$parentId];
-        $stack = [$parentId];
+        $children = Category::where('parent_category_id', $parentId)->pluck('id')->toArray();
 
-        while ($stack) {
-            $current = array_pop($stack);
-            foreach ($this->childrenMap[$current] ?? [] as $childId) {
-                $ids[] = $childId;
-                $stack[] = $childId;
-            }
+        foreach ($children as $childId) {
+            $ids = array_merge($ids, $this->getDescendantCategoryIds($childId));
         }
 
         return $this->descendantCache[$parentId] = $ids;
     }
 
-
-    public string $leaderboardPeriod = 'month';
-
-
     public function render()
     {
-        $today = Carbon::today();
-        $thisMonth = Carbon::now()->startOfMonth();
         $isAdmin = auth()->user()->isAdmin();
 
+        // Instant stats — cheap COUNT queries only
         $itemsInStock = $this->scopeShop(Item::where('status', ItemStatus::Store))->count();
 
-        $todaySells = $this->scopeShop(
-            Sell::where('valid', 1)->whereBetween('created_at', [$today->startOfDay(), $today->copy()->endOfDay()])
-        )->count();
-
         $todayPurchases = $this->scopeShop(
-            Purchase::where('valid', 1)->whereBetween('created_at', [$today->startOfDay(), $today->copy()->endOfDay()])
+            Purchase::where('valid', 1)
+                ->whereBetween('created_at', [Carbon::today()->startOfDay(), Carbon::today()->endOfDay()])
         )->count();
-
-        $todayRevenue = $isAdmin
-            ? $this->soldItemsQuery($today)->sum('sells_items.price')
-            : 0;
-
-        $monthSells = $this->scopeShop(
-            Sell::where('valid', 1)->where('created_at', '>=', $thisMonth)
-        )->count();
-
-        $monthRevenue = $isAdmin
-            ? $this->soldItemsQuery($thisMonth, now())->sum('sells_items.price')
-            : 0;
-
-        $shopStats = $this->getPerShopCountStats();
 
         return view('livewire.dashboard', [
             'itemsInStock' => $itemsInStock,
-            'todaySells' => $todaySells,
-            'todayRevenue' => $todayRevenue,
             'todayPurchases' => $todayPurchases,
-            'monthSells' => $monthSells,
-            'monthRevenue' => $monthRevenue,
-            'shopStats' => $shopStats,
             'isAdmin' => $isAdmin,
         ]);
     }
