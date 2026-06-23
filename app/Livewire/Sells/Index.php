@@ -4,6 +4,7 @@ namespace App\Livewire\Sells;
 
 use App\Enums\ItemStatus;
 use App\Enums\PaymentMethod;
+use App\Enums\SellStatus;
 use App\Models\Item;
 use App\Models\Sell;
 use App\Models\Shop;
@@ -27,7 +28,7 @@ class Index extends Component
     public string $paymentMethod = '';
 
     #[Url]
-    public string $valid = '1';
+    public string $status = 'valid';
 
     #[Url]
     public string $period = 'today';
@@ -61,14 +62,17 @@ class Index extends Component
         $this->resetPage();
     }
 
-    public function updatedValid(): void
+    public function updatedStatus(): void
     {
         $this->resetPage();
     }
 
     public function updatedPeriod(): void
     {
-        if ($this->period !== 'custom') {
+        if ($this->period === 'custom') {
+            $this->dateFrom = now()->format('Y-m-d');
+            $this->dateTo = now()->format('Y-m-d');
+        } else {
             $this->dateFrom = '';
             $this->dateTo = '';
         }
@@ -140,9 +144,14 @@ class Index extends Component
             $query->whereBetween('sells.created_at', [$from, $to]);
         }
 
-        if ($this->valid !== 'all') {
-            $query->where('sells.valid', (int) $this->valid);
-        }
+        // Status filter: valid (all non-cancelled), completed, no_bill, cancelled, all
+        match ($this->status) {
+            'valid'     => $query->where('sells.valid', 1),
+            'completed' => $query->where('sells.valid', 1)->whereNotNull('sells.bill_printed_at'),
+            'no_bill'   => $query->where('sells.valid', 1)->whereNull('sells.bill_printed_at'),
+            'cancelled' => $query->where('sells.valid', 0),
+            default     => null, // 'all' — no filter
+        };
 
         if ($this->paymentMethod !== '') {
             $query->where('sells.payment_method', (int) $this->paymentMethod);

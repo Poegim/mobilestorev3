@@ -76,8 +76,18 @@ class ImportLegacyData extends Command
 
     private function importChunked(string $label, string $legacyTable, string $newTable, callable $mapper): void
     {
+        $total = $this->legacy($legacyTable)->count();
+
+        if ($total === 0) {
+            $this->line("  ⊘ {$label}: 0 records (empty)");
+            return;
+        }
+
         $count = 0;
-        $this->legacy($legacyTable)->orderBy('id')->chunk(1000, function ($rows) use ($newTable, $mapper, &$count) {
+        $bar = $this->output->createProgressBar($total);
+        $bar->setFormat("  ⏳ {$label}: %current%/%max% [%bar%] %percent:3s%% • %elapsed% elapsed");
+
+        $this->legacy($legacyTable)->orderBy('id')->chunk(1000, function ($rows) use ($newTable, $mapper, &$count, $bar) {
             $batch = [];
             foreach ($rows as $row) {
                 $mapped = $mapper((array) $row);
@@ -89,7 +99,11 @@ class ImportLegacyData extends Command
                 DB::table($newTable)->insert($batch);
                 $count += count($batch);
             }
+            $bar->advance(count($rows));
         });
+
+        $bar->finish();
+        $this->newLine();
         $this->imported += $count;
         $this->line("  ✓ {$label}: {$count} records");
     }

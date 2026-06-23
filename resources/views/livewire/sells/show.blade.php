@@ -1,13 +1,10 @@
 <div>
     {{-- Header --}}
+    @php $sellStatus = $sell->status(); @endphp
     <div class="mb-6 flex items-center gap-3">
         <flux:button variant="ghost" icon="arrow-left" :href="$this->backUrl" wire:navigate />
         <flux:heading size="xl">Sprzedaż #{{ $sell->id }}</flux:heading>
-        @if($sell->valid)
-            <flux:badge variant="primary">Aktywna</flux:badge>
-        @else
-            <flux:badge color="red">Anulowana</flux:badge>
-        @endif
+        <flux:badge :color="$sellStatus->color()">{{ $sellStatus->label() }}</flux:badge>
     </div>
 
     {{-- Meta info --}}
@@ -41,6 +38,20 @@
                         <flux:icon :name="$sell->payment_method->icon()" variant="mini" class="size-4" />
                         {{ $sell->payment_method->label() }}
                     </span>
+                </flux:text>
+            </div>
+
+            <div>
+                <flux:subheading>Paragon</flux:subheading>
+                <flux:text class="mt-1">
+                    @if($sell->bill_printed_at)
+                        <span class="inline-flex items-center gap-1.5 text-green-600">
+                            <flux:icon.check-circle variant="mini" class="size-4" />
+                            {{ $sell->bill_printed_at->format('d.m.Y H:i') }}
+                        </span>
+                    @else
+                        <span class="text-zinc-400">—</span>
+                    @endif
                 </flux:text>
             </div>
 
@@ -123,7 +134,7 @@
 
             <flux:table.rows>
                 @forelse($sell->soldItems->sortByDesc('valid') as $si)
-                    <flux:table.row :class="!$si->valid ? 'opacity-50' : ''">
+                    <flux:table.row :class="!$si->valid ? 'opacity-50 line-through' : ''">
 
                         {{-- Item ID or Service ID --}}
                         <flux:table.cell variant="strong">
@@ -164,46 +175,46 @@
                                     {{ $purchase->invoice_number ?: 'Zakup #' . $purchase->id }}
                                 </flux:link>
                             @else
-                                —
+                                <span class="text-zinc-400">—</span>
                             @endif
                         </flux:table.cell>
 
-                        {{-- VAT rate --}}
+                        {{-- Tax rate --}}
                         <flux:table.cell>
                             @if($si->tax_id && $si->tax)
-                                {{ rtrim(rtrim(number_format($si->tax->percentage, 2, ',', ''), '0'), ',') }}%
+                                {{ $si->tax->name }}
                             @else
-                                <span class="text-zinc-400">Marża</span>
+                                <span class="text-zinc-400">marża</span>
                             @endif
                         </flux:table.cell>
 
-                        {{-- Sell net price --}}
+                        {{-- Sell net --}}
                         <flux:table.cell class="tabular-nums whitespace-nowrap">
                             {{ number_format($si->getNetPrice() / 100, 2, ',', ' ') }} zł
                         </flux:table.cell>
 
-                        {{-- Sell gross price --}}
-                        <flux:table.cell variant="strong" class="tabular-nums whitespace-nowrap">
+                        {{-- Sell gross --}}
+                        <flux:table.cell class="tabular-nums whitespace-nowrap font-medium">
                             {{ number_format($si->price / 100, 2, ',', ' ') }} zł
                         </flux:table.cell>
 
                         @if($isAdmin)
-                            {{-- Purchase net price --}}
+                            {{-- Purchase net --}}
                             <flux:table.cell class="tabular-nums whitespace-nowrap text-zinc-500">
                                 @if($si->item_id && $si->item?->purchasedItem)
                                     {{ number_format($si->item->purchasedItem->price / 100, 2, ',', ' ') }} zł
-                                @elseif($si->service_id && $si->internal_cost)
+                                @elseif($si->service_id)
                                     {{ number_format($si->internal_cost / 100, 2, ',', ' ') }} zł
                                 @else
                                     —
                                 @endif
                             </flux:table.cell>
 
-                            {{-- Purchase gross price --}}
+                            {{-- Purchase gross --}}
                             <flux:table.cell class="tabular-nums whitespace-nowrap text-zinc-500">
                                 @if($si->item_id && $si->item?->purchasedItem)
                                     {{ number_format($si->item->purchasedItem->getGrossPrice() / 100, 2, ',', ' ') }} zł
-                                @elseif($si->service_id && $si->internal_cost)
+                                @elseif($si->service_id)
                                     {{ number_format($si->internal_cost / 100, 2, ',', ' ') }} zł
                                 @else
                                     —

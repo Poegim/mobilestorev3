@@ -48,10 +48,12 @@
                 <option value="{{ $pm->value }}">{{ $pm->label() }}</option>
             @endforeach
         </flux:select>
-        <flux:select wire:model.live="valid" class="w-36">
+        <flux:select wire:model.live="status" class="w-44">
             <option value="all">Wszystkie</option>
-            <option value="1">Aktywne</option>
-            <option value="0">Anulowane</option>
+            <option value="valid">Aktywne</option>
+            <option value="completed">Paragon</option>
+            <option value="no_bill">Bez paragonu</option>
+            <option value="cancelled">Anulowane</option>
         </flux:select>
     </div>
 
@@ -71,12 +73,13 @@
             <flux:table.column>Płatność</flux:table.column>
             <flux:table.column>Sklep</flux:table.column>
             <flux:table.column>Data</flux:table.column>
-            <flux:table.column></flux:table.column>
+            <flux:table.column>Status</flux:table.column>
         </flux:table.columns>
 
         <flux:table.rows>
             @forelse($sells as $sell)
-                <flux:table.row>
+                @php $sellStatus = $sell->status(); @endphp
+                <flux:table.row :class="$sellStatus === \App\Enums\SellStatus::Cancelled ? 'opacity-50 line-through' : ''">
                 {{-- ID cell → link --}}
                 <flux:table.cell variant="strong">
                     @php
@@ -85,7 +88,8 @@
                             : route('sells.show', $sell);
                     @endphp
                     <flux:link href="{{ $showRoute }}" wire:navigate>#{{ $sell->id }}</flux:link>
-                </flux:table.cell>                    <flux:table.cell>
+                </flux:table.cell>
+                    <flux:table.cell>
                         @foreach($sell->soldItems as $si)
                             <div class="flex items-center justify-between gap-4 text-sm group leading-tight {{ !$loop->first ? 'mt-0.5' : '' }}">
                                 <span class="flex items-center gap-1.5 min-w-0">
@@ -116,11 +120,14 @@
                                             $stockKey = $si->item->product_id . ':' . $sell->parent_shop_id;
                                             $remaining = $stockMap[$stockKey] ?? null;
                                         @endphp
-                                        @if($remaining === 0)
-                                            <flux:badge size="sm" color="red" class="shrink-0">Ostatnia!</flux:badge>
-                                        @elseif($remaining === 1)
-                                            <flux:badge size="sm" color="amber" class="shrink-0">Zostaje 1 szt.</flux:badge>
-                                        @endif
+                                        @if($remaining !== null)
+                                        <span @class([
+                                            'inline-flex items-center justify-center size-5 rounded-full text-[10px] font-bold shrink-0',
+                                            'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400' => $remaining === 0,
+                                            'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400' => $remaining === 1,
+                                            'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400' => $remaining > 1,
+                                        ])>{{ $remaining }}</span>
+                                    @endif
                                     @elseif($si->service_id)
                                         <span class="italic text-zinc-400">Usługa #{{ $si->service_id }}</span>
                                     @endif
@@ -148,11 +155,14 @@
                         {{ $sell->created_at->format('d.m.Y H:i') }}
                     </flux:table.cell>
                     <flux:table.cell>
-                        @if($sell->valid)
-                            <flux:icon.check-circle variant="mini" class="size-5 text-green-500" />
-                        @else
-                            <flux:icon.x-circle variant="mini" class="size-5 text-red-500" />
-                        @endif
+                        <span title="{{ $sellStatus->label() }}">
+                            <flux:icon :name="$sellStatus->icon()" variant="mini" @class([
+                                'size-5',
+                                'text-green-500' => $sellStatus === \App\Enums\SellStatus::Completed,
+                                'text-amber-500' => $sellStatus === \App\Enums\SellStatus::NoBill,
+                                'text-red-500'   => $sellStatus === \App\Enums\SellStatus::Cancelled,
+                            ]) />
+                        </span>
                     </flux:table.cell>
                 </flux:table.row>
             @empty

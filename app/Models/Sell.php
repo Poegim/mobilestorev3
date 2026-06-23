@@ -2,21 +2,24 @@
 
 namespace App\Models;
 
+use App\Enums\ItemStatus;
 use App\Enums\PaymentMethod;
+use App\Enums\SellStatus;
 use Illuminate\Database\Eloquent\Model;
 
 class Sell extends Model
 {
-    
-    
     protected $fillable = [
-        'parent_shop_id', 'valid', 'payment_method',
+        'parent_shop_id', 'valid', 'payment_method', 'bill_printed_at',
     ];
 
     protected $casts = [
-        'valid' => 'boolean',
-        'payment_method' => PaymentMethod::class,
+        'valid'           => 'boolean',
+        'payment_method'  => PaymentMethod::class,
+        'bill_printed_at' => 'datetime',
     ];
+
+    // -- Relationships --
 
     public function shop()
     {
@@ -28,6 +31,22 @@ class Sell extends Model
         return $this->hasMany(SoldItem::class, 'sell_id');
     }
 
+    // -- Status --
+
+    /** Computed status derived from valid + bill_printed_at. */
+    public function status(): SellStatus
+    {
+        if (! $this->valid) {
+            return SellStatus::Cancelled;
+        }
+
+        return $this->bill_printed_at
+            ? SellStatus::Completed
+            : SellStatus::NoBill;
+    }
+
+    // -- Aggregates --
+
     public function getTotalPrice(): int
     {
         return $this->soldItems->where('valid', 1)->sum('price');
@@ -38,6 +57,8 @@ class Sell extends Model
         return $this->soldItems->where('valid', 1)->sum(fn ($si) => $si->getIncome());
     }
 
+    // -- Actions --
+
     public function invalidate(): void
     {
         $this->update(['valid' => 0]);
@@ -47,5 +68,10 @@ class Sell extends Model
                 $soldItem->item->update(['status' => ItemStatus::Store]);
             }
         }
+    }
+
+    public function markBillPrinted(): void
+    {
+        $this->update(['bill_printed_at' => now()]);
     }
 }
