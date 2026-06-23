@@ -77,8 +77,15 @@
         <flux:table.rows>
             @forelse($sells as $sell)
                 <flux:table.row>
-                    <flux:table.cell variant="strong">{{ $sell->id }}</flux:table.cell>
-                    <flux:table.cell>
+                {{-- ID cell → link --}}
+                <flux:table.cell variant="strong">
+                    @php
+                        $showRoute = $this->shop
+                            ? route('shop.sells.show', [$this->shop, $sell])
+                            : route('sells.show', $sell);
+                    @endphp
+                    <flux:link href="{{ $showRoute }}" wire:navigate>#{{ $sell->id }}</flux:link>
+                </flux:table.cell>                    <flux:table.cell>
                         @foreach($sell->soldItems as $si)
                             <div class="flex items-center justify-between gap-4 text-sm group leading-tight {{ !$loop->first ? 'mt-0.5' : '' }}">
                                 <span class="flex items-center gap-1.5 min-w-0">

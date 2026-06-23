@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class SoldItem extends Model
 {
-    
     protected $table = 'sells_items';
     protected $fillable = [
         'sell_id', 'item_id', 'service_id',
@@ -33,6 +32,23 @@ class SoldItem extends Model
         return $this->belongsTo(Tax::class);
     }
 
+    /**
+     * Selling price is stored as gross (brutto).
+     * Net = gross / (1 + tax_rate). For margin sales (tax_id=0) net equals gross.
+     */
+    public function getNetPrice(): int
+    {
+        if (! $this->tax_id || ! $this->tax) {
+            return $this->price;
+        }
+
+        return (int) round($this->price / (1 + $this->tax->getReal()));
+    }
+
+    /**
+     * Income = sell_price (gross) - purchase_price (gross).
+     * For services: sell_price - internal_cost.
+     */
     public function getIncome(): int
     {
         $boughtFor = 0;
