@@ -212,9 +212,13 @@
                 <x-dashboard-shop-card
                     :shop-name="$stat['shopName']"
                     :shop-color="$stat['shopColor']"
-                    :stock="$stat['stock']"
-                    :today="$stat['today']"
-                    :month="$stat['month']"
+                    :rank="$stat['rank']"
+                    :revenue="$stat['revenue']"
+                    :transactions="$stat['transactions']"
+                    :max-transactions="$stat['maxTransactions']"
+                    :devices="$stat['devices']"
+                    :accessories="$stat['accessories']"
+                    :services="$stat['services']"
                 />
             @endforeach
         </div>

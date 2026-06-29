@@ -39,6 +39,12 @@
                 <flux:sidebar.item icon="arrows-right-left" :href="route($routePrefix . 'dashboard', $shopParam)" :current="request()->routeIs('*transfers.*')" wire:navigate>
                     Transfery
                 </flux:sidebar.item>
+                {{-- Admin-only: user management --}}
+                @if(auth()->user()?->isAdmin())
+                    <flux:sidebar.item icon="users" :href="route('admin.users.index')" :current="request()->routeIs('admin.users.*')" wire:navigate>
+                        Użytkownicy
+                    </flux:sidebar.item>
+                @endif
             </flux:sidebar.nav>
 
             <flux:spacer />

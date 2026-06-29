@@ -96,14 +96,26 @@ class Dashboard extends Component
     {
         $stats = $this->getPerShopCountStats();
 
-        // Transform to plain arrays for Livewire serialization
-        $this->shopStats = $stats->map(fn ($stat) => [
-            'shopName'  => $stat['shop']->name,
-            'shopColor' => $stat['shop']->color,
-            'stock'     => $stat['stock'],
-            'today'     => $stat['today'],
-            'month'     => $stat['month'],
-        ])->values()->toArray();
+        // Compute maxTransactions for progress bar scaling
+        $maxTx = $stats->max(fn ($s) => $s['today']['transactions']) ?: 1;
+
+        // Flatten to match x-dashboard-shop-card props and sort by today transactions desc
+        $this->shopStats = $stats
+            ->sortByDesc(fn ($s) => $s['today']['transactions'])
+            ->values()
+            ->map(fn ($stat, $i) => [
+                'shopName'        => $stat['shop']->name,
+                'shopColor'       => $stat['shop']->color ?? '#6366f1',
+                'rank'            => $i + 1,
+                'stock'           => $stat['stock'],
+                'transactions'    => $stat['today']['transactions'],
+                'revenue'         => $stat['today']['revenue'],
+                'devices'         => $stat['today']['devices'],
+                'accessories'     => $stat['today']['accessories'],
+                'services'        => $stat['today']['services'],
+                'maxTransactions' => $maxTx,
+            ])
+            ->toArray();
 
         $this->shopStatsLoaded = true;
     }
@@ -259,13 +271,14 @@ class Dashboard extends Component
                 ? Shop::where('archive', false)->orderBy('order')->get()
                 : $user->shops()->where('archive', false)->orderBy('order')->get());
 
-        $today = Carbon::today();
-        $thisMonth = Carbon::now()->startOfMonth();
+        $todayStart = Carbon::today()->startOfDay()->toImmutable();
+        $todayEnd = Carbon::today()->endOfDay()->toImmutable();
+        $monthStart = Carbon::now()->startOfMonth()->toImmutable();
 
         $deviceCategoryIds = $this->getDescendantCategoryIds(2);
         $accessoryCategoryIds = $this->getDescendantCategoryIds(3);
 
-        return $shops->map(function (Shop $shop) use ($today, $thisMonth, $deviceCategoryIds, $accessoryCategoryIds) {
+        return $shops->map(function (Shop $shop) use ($todayStart, $todayEnd, $monthStart, $deviceCategoryIds, $accessoryCategoryIds) {
             $stock = Item::where('parent_shop_id', $shop->id)
                 ->where('status', ItemStatus::Store)
                 ->count();
@@ -277,11 +290,11 @@ class Dashboard extends Component
                     ->where('sells.valid', 1)
                     ->where('sells.parent_shop_id', $shop->id)
                 )
-                ->whereBetween('sells.created_at', [$today->startOfDay(), $today->copy()->endOfDay()]);
+                ->whereBetween('sells.created_at', [$todayStart, $todayEnd]);
 
             $todayTransactions = Sell::where('valid', 1)
                 ->where('parent_shop_id', $shop->id)
-                ->whereBetween('created_at', [$today->startOfDay(), $today->copy()->endOfDay()])
+                ->whereBetween('created_at', [$todayStart, $todayEnd])
                 ->count();
 
             $todayTotal = (clone $todaySoldItems)->count();
@@ -300,6 +313,8 @@ class Dashboard extends Component
                 ->where('sells_items.service_id', '>', 0)
                 ->count();
 
+            $todayRevenue = (clone $todaySoldItems)->sum('sells_items.price');
+
             // Month sold items for this shop
             $monthSoldItems = SoldItem::where('sells_items.valid', 1)
                 ->join('sells', fn ($j) => $j
@@ -307,11 +322,11 @@ class Dashboard extends Component
                     ->where('sells.valid', 1)
                     ->where('sells.parent_shop_id', $shop->id)
                 )
-                ->where('sells.created_at', '>=', $thisMonth);
+                ->where('sells.created_at', '>=', $monthStart);
 
             $monthTransactions = Sell::where('valid', 1)
                 ->where('parent_shop_id', $shop->id)
-                ->where('created_at', '>=', $thisMonth)
+                ->where('created_at', '>=', $monthStart)
                 ->count();
 
             $monthTotal = (clone $monthSoldItems)->count();
@@ -335,6 +350,7 @@ class Dashboard extends Component
                 'stock' => $stock,
                 'today' => [
                     'transactions' => $todayTransactions,
+                    'revenue' => $todayRevenue,
                     'items' => $todayTotal,
                     'devices' => $todayDevices,
                     'accessories' => $todayAccessories,
