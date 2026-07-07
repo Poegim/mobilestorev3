@@ -7,17 +7,35 @@ use Illuminate\Database\Eloquent\Model;
 
 class Item extends Model
 {    
-    protected $fillable = [
+        protected $fillable = [
         'parent_shop_id', 'product_id', 'status',
-        'feature_condition_id', 'feature_price',
+        'feature_color_id', 'feature_condition_id', 'feature_price',
+        'feature_imei', 'feature_simlock_network_id',
+        'feature_memory', 'feature_storage',
+        'feature_box', 'feature_proof_of_purchase', 'feature_comment', 'feature_dual_sim',
         'barcode_scanned_at', 'displaced_at',
     ];
 
     protected $casts = [
         'status' => ItemStatus::class,
+        'feature_box' => 'boolean',
+        'feature_proof_of_purchase' => 'boolean',
+        'feature_dual_sim' => 'boolean',
+        'feature_memory' => 'float',
+        'feature_storage' => 'float',
         'barcode_scanned_at' => 'datetime',
         'displaced_at' => 'datetime',
     ];
+
+    public function color()
+    {
+        return $this->belongsTo(Color::class, 'feature_color_id');
+    }
+
+    public function simlockNetwork()
+    {
+        return $this->belongsTo(Network::class, 'feature_simlock_network_id');
+    }
 
     public function shop()
     {

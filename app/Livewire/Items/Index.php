@@ -9,6 +9,8 @@ use App\Models\Shop;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Models\Brand;
+use Livewire\Attributes\Url;
 
 class Index extends Component
 {
@@ -20,6 +22,9 @@ class Index extends Component
     public string $period = 'all';    
 
     public ?Shop $shop = null;
+    
+    #[Url]
+    public string $brand = '';
 
     public function mount(?Shop $shop = null): void
     {
@@ -30,6 +35,12 @@ class Index extends Component
     public function categoryTree(): array
     {
         return $this->getCategoryTree();
+    }
+
+
+    public function updatedBrand(): void
+    {
+        $this->resetPage();
     }
 
     public function updatedPeriod(): void
@@ -89,9 +100,33 @@ class Index extends Component
         return $result;
     }
 
+    /**
+     * Return the given category id plus all descendant category ids.
+     * Products are attached to leaf categories, so filtering by a parent
+     * node (e.g. "Urządzenia") must include the whole subtree.
+     */
+    private function descendantCategoryIds(int $categoryId): array
+    {
+        $all = Category::get(['id', 'parent_category_id']);
+        $ids = [$categoryId];
+        $stack = [$categoryId];
+
+        while ($stack) {
+            $parent = array_pop($stack);
+            foreach ($all->where('parent_category_id', $parent) as $child) {
+                $ids[] = (int) $child->id;
+                $stack[] = (int) $child->id;
+            }
+        }
+
+        return $ids;
+    }
+
     public function render()
     {
-        $query = Item::with(['product.brand', 'product.category', 'condition', 'purchasedItem.purchase.contact']);
+        $query = Item::with(['product.brand', 'product.category', 'condition', 
+        'purchasedItem.tax',  
+        'purchasedItem.purchase.contact']);
         
         if ($this->shop) {
             $query->where('parent_shop_id', $this->shop->id);
@@ -109,12 +144,20 @@ class Index extends Component
         }
 
         if ($this->category !== '') {
-            $query->whereHas('product', fn ($q) => $q->where('parent_category_id', (int) $this->category));
+            $categoryIds = $this->descendantCategoryIds((int) $this->category);
+            $query->whereHas('product', fn ($q) => $q->whereIn('parent_category_id', $categoryIds));
         }
 
         if ($this->search !== '') {
-            $query->whereHas('product', function ($q) {
-                $q->where('name', 'like', "%{$this->search}%");
+            $search = trim($this->search);
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('product', fn ($p) => $p->where('name', 'like', "%{$search}%"))
+                  ->orWhere('feature_imei', 'like', "{$search}%");
+
+                // Numeric input can also be an item ID (indexed PK)
+                if (ctype_digit($search)) {
+                    $q->orWhere('id', (int) $search);
+                }
             });
         }
 
@@ -128,11 +171,17 @@ class Index extends Component
             }
         }
 
+        if ($this->brand !== '') {
+            $query->whereHas('product', fn ($q) => $q->where('brand_id', (int) $this->brand));
+        }
+
         $items = $query->orderByDesc('id')->paginate(25);
 
         return view('livewire.items.index', [
             'items' => $items,
             'statuses' => ItemStatus::cases(),
+            'brands' => Brand::orderBy('name')->get(['id', 'name']), // pass plainly, no persisted computed
+
         ]);
     }
 }

@@ -4,7 +4,6 @@ namespace App\Livewire\Sells;
 
 use App\Enums\ItemStatus;
 use App\Enums\PaymentMethod;
-use App\Enums\SellStatus;
 use App\Models\Item;
 use App\Models\Sell;
 use App\Models\Shop;
@@ -14,10 +13,12 @@ use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Livewire\Concerns\WithCategoryFilter;
 
 class Index extends Component
 {
     use WithPagination;
+    use WithCategoryFilter;
 
     public ?Shop $shop = null;
 
@@ -157,14 +158,26 @@ class Index extends Component
             $query->where('sells.payment_method', (int) $this->paymentMethod);
         }
 
+        if ($this->category !== '') {
+            $categoryIds = $this->descendantCategoryIds((int) $this->category);
+            $query->whereHas('soldItems.item.product', fn ($pq) => $pq->whereIn('parent_category_id', $categoryIds));
+        }
+
         if ($this->search !== '') {
-            $query->where(function ($q) {
-                $q->where('sells.id', $this->search)
-                  ->orWhereHas('soldItems.item.product', fn ($pq) =>
-                      $pq->where('name', 'like', "%{$this->search}%")
-                  );
+            $search = trim($this->search);
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('soldItems.item.product', fn ($p) => $p->where('name', 'like', "%{$search}%"))
+                  ->orWhereHas('soldItems.item', fn ($it) => $it->where('feature_imei', 'like', "{$search}%"));
+
+                // Numeric input: sell ID or item ID (both indexed)
+                if (ctype_digit($search)) {
+                    $q->orWhere('id', (int) $search)
+                      ->orWhereHas('soldItems', fn ($si) => $si->where('item_id', (int) $search));
+                }
             });
         }
+
+        
 
         return $query;
     }

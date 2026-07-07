@@ -6,8 +6,14 @@
 
     <div class="mb-4 flex gap-3">
         <div class="flex-1">
-            <flux:input wire:model.live.debounce.300ms="search" placeholder="Szukaj produktu..." icon="magnifying-glass" />
+            <flux:input wire:model.live.debounce.500ms="search" placeholder="ID, produkt lub IMEI..." icon="magnifying-glass" />
         </div>
+        <flux:select wire:model.live="brand" class="w-48">
+            <option value="">Wszystkie marki</option>
+            @foreach($brands as $b)
+                <option value="{{ $b->id }}">{{ $b->name }}</option>
+            @endforeach
+        </flux:select>
         <flux:select wire:model.live="period" class="w-48">
             @foreach(\App\Enums\Period::cases() as $p)
                 <option value="{{ $p->value }}">{{ $p->label() }}</option>
@@ -39,6 +45,7 @@
             <flux:table.column>ID</flux:table.column>
             <flux:table.column>Produkt</flux:table.column>
             <flux:table.column>Kategoria</flux:table.column>
+            <flux:table.column>IMEI</flux:table.column>
             <flux:table.column>Stan</flux:table.column>
             <flux:table.column>Cena</flux:table.column>
             <flux:table.column>Zakup</flux:table.column>
@@ -51,16 +58,34 @@
                 <flux:table.row>
                     <flux:table.cell>{{ $item->id }}</flux:table.cell>
                     <flux:table.cell>
-                        <span class="font-medium">{{ $item->product->brand->name ?? '' }} {{ $item->product->name }}</span>
+                        <div class="w-64 whitespace-normal break-words font-medium">
+                            {{ $item->product->brand->name ?? '' }} {{ $item->product->name }}
+                        </div>
                     </flux:table.cell>
                     <flux:table.cell class="text-zinc-500">{{ $item->product->category->name ?? '-' }}</flux:table.cell>
+                    <flux:table.cell class="font-mono text-sm">{{ $item->feature_imei ?? '—' }}</flux:table.cell>
                     <flux:table.cell>{{ $item->condition->name ?? '-' }}</flux:table.cell>
-                    <flux:table.cell>
-                        @if($item->feature_price)
-                            {{ number_format($item->feature_price / 100, 2, ',', ' ') }} zł
-                        @else
-                            -
-                        @endif
+                    <flux:table.cell class="whitespace-nowrap tabular-nums text-sm">
+                        @php
+                            $pi = $item->purchasedItem;
+                            $sell = $item->getSellingPrice(); // suggested gross sell price (grosze)
+                        @endphp
+                        <div class="flex flex-col gap-0.5">
+                            {{-- Purchase: net / gross --}}
+                            @if($pi)
+                                <span class="text-zinc-500">
+                                    zakup: {{ number_format($pi->price / 100, 2, ',', ' ') }}
+                                    / {{ number_format($pi->getGrossPrice() / 100, 2, ',', ' ') }} zł
+                                </span>
+                            @else
+                                <span class="text-zinc-300 dark:text-zinc-600">zakup: —</span>
+                            @endif
+
+                            {{-- Suggested sell price (gross) --}}
+                            <span class="font-medium">
+                                sprzedaż: {{ $sell !== null ? number_format($sell / 100, 2, ',', ' ') . ' zł' : '—' }}
+                            </span>
+                        </div>
                     </flux:table.cell>
                     <flux:table.cell>
                         @if($item->purchasedItem?->purchase)

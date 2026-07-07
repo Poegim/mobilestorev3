@@ -30,9 +30,24 @@
         @endforeach
     </div>
 
+    
+
     <div class="mb-4 flex flex-wrap gap-3">
+        <flux:select wire:model.live="category" class="w-56">
+            <option value="">Wszystkie kategorie</option>
+            @foreach($this->categoryTree as $group)
+                <optgroup label="{{ $group['name'] }}">
+                    <option value="{{ $group['id'] }}">Wszystkie {{ $group['name'] }}</option>
+                    @foreach($group['children'] as $child)
+                        <option value="{{ $child['id'] }}">
+                            {{ str_repeat('── ', $child['depth']) }}{{ $child['name'] }}
+                        </option>
+                    @endforeach
+                </optgroup>
+            @endforeach
+        </flux:select>
         <div class="flex-1 min-w-48">
-            <flux:input wire:model.live.debounce.500ms="search" placeholder="ID sprzedaży lub nazwa produktu..." icon="magnifying-glass" />
+            <flux:input wire:model.live.debounce.500ms="search" placeholder="ID sprzedaży, ID itemu, produkt lub IMEI..." icon="magnifying-glass" />
         </div>
         <flux:select wire:model.live="period" class="w-44">
             <option value="today">Dzisiaj</option>
@@ -94,7 +109,14 @@
                             <div class="flex items-center justify-between gap-4 text-sm group leading-tight {{ !$loop->first ? 'mt-0.5' : '' }}">
                                 <span class="flex items-center gap-1.5 min-w-0">
                                     @if($si->item?->product)
-                                        <span class="truncate">{{ $si->item->product->brand?->name }} {{ $si->item->product->name }}</span>
+                                        <div class="flex flex-col">
+                                            <span class="font-medium">{{ $si->item->product->brand->name ?? '' }} {{ $si->item->product->name }} 
+                                                @if($si->item->feature_imei)
+                                                <span class="font-mono text-xs text-green-500"> {{ $si->item->feature_imei }}</span>
+                                                @endif 
+                                            </span>
+                                            
+                                        </div>
                                         <button
                                             type="button"
                                             x-data="{ copied: false }"
