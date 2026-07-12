@@ -23,8 +23,6 @@
             'last90'      => '90 dni',
             'quarter'     => 'Kwartał',
             'lastquarter' => 'Poprz. kwartał',
-            'year'        => 'Ten rok',
-            'lastyear'    => 'Poprz. rok',
         ] as $value => $label)
             <button
                 wire:click="$set('period', '{{ $value }}')"
