@@ -54,9 +54,11 @@
             </span>
         </div>
 
-        {{-- Transaction count --}}
+        {{-- Sales count (transactions) + total items sold --}}
         <div class="text-xs tabular-nums text-zinc-500 dark:text-zinc-400">
-            {{ $total }} sprzedaży
+            {{ $transactions }} {{ $transactions === 1 ? 'sprzedaż' : 'sprzedaży' }}
+            <span class="text-zinc-300 dark:text-zinc-600">·</span>
+            {{ $total }} szt.
         </div>
 
         @if($total > 0)
