@@ -1,4 +1,8 @@
 <div>
+    @php
+    // $period may arrive as the enum or its string value — normalise for comparison.
+    $activePeriod = $period instanceof \App\Enums\DashboardPeriod ? $period->value : $period;
+    @endphp
     {{-- Header: date + shop name --}}
     <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between mb-6">
         <div>
@@ -27,9 +31,9 @@
             <button
                 wire:click="$set('period', '{{ $value }}')"
                 @class([
-                    'px-3 py-1.5 rounded-lg text-sm font-medium transition-colors duration-150',
-                    'bg-indigo-600 text-white shadow-sm' => $period === $value,
-                    'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800' => $period !== $value,
+                    'cursor-pointer px-3 py-1.5 rounded-lg text-sm font-medium transition-colors duration-150',
+                    'bg-indigo-600 text-white shadow-sm' => $activePeriod === $value,
+                    'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800' => $activePeriod !== $value,
                 ])
             >
                 {{ $label }}
@@ -259,6 +263,8 @@
                             :devices="$stat['devices']"
                             :accessories="$stat['accessories']"
                             :services="$stat['services']"
+                            :accessory-margin-pct-current="$stat['accessoryMarginPctCurrent']"
+                            :accessory-margin-pct-previous="$stat['accessoryMarginPctPrevious']"
                         />
                     @endforeach
                 </div>

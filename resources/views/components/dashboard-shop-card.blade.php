@@ -18,6 +18,11 @@
     $pctDevices  = $total > 0 ? round(($devices / $total) * 100, 1) : 0;
     $pctAccess   = $total > 0 ? round(($accessories / $total) * 100, 1) : 0;
     $pctServices = $total > 0 ? 100 - $pctDevices - $pctAccess : 0;
+
+    // Accessory margin display state.
+    $hasCurrent  = $accessoryMarginPctCurrent !== null;
+    $hasPrevious = $accessoryMarginPctPrevious !== null;
+    $improved    = $hasCurrent && $hasPrevious && $accessoryMarginPctCurrent >= $accessoryMarginPctPrevious;
 @endphp
 
 <div
@@ -36,7 +41,7 @@
         <div class="flex items-center justify-between gap-2">
             <div class="flex items-center gap-1.5 min-w-0">
                 <span class="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100 hover:underline">
-                    <flux:link href="{{ route('dashboard', ['shop' => $shopId]) }}" wire:navigate>
+                    <flux:link href="{{ route('shop.dashboard', ['shop' => $shopId]) }}">
                         {{ $shopName }}
                     </flux:link>
                 </span>
@@ -93,23 +98,30 @@
             <div class="text-xs text-zinc-300 dark:text-zinc-600">Brak sprzedaży</div>
         @endif
 
-        {{-- Accessory margin — always current vs previous month, independent of period --}}
-        @if($accessoryMarginPctCurrent !== null)
-            <div class="flex items-center justify-between text-xs pt-1.5 border-t border-zinc-100 dark:border-zinc-800">
-                <span class="text-zinc-400 dark:text-zinc-500">Marża akc.</span>
-                <div class="flex items-center gap-1.5 tabular-nums">
-                    @if($accessoryMarginPctPrevious !== null)
-                        <span class="text-zinc-400 dark:text-zinc-500">{{ $accessoryMarginPctPrevious }}%</span>
-                        <span class="text-zinc-300 dark:text-zinc-600">→</span>
-                    @endif
+        {{-- Accessory margin — always rendered; shows "brak danych" when current is null --}}
+        {{-- Accessory margin — current vs previous month; each side shown independently --}}
+        <div class="flex items-center justify-between text-xs pt-1.5 border-t border-zinc-100 dark:border-zinc-800">
+            <span class="text-zinc-400 dark:text-zinc-500">Marża akc.</span>
+            <div class="flex items-center gap-1.5 tabular-nums">
+                @if($hasPrevious)
+                    <span class="text-zinc-400 dark:text-zinc-500">{{ number_format($accessoryMarginPctPrevious, 2, ',', ' ') }}%</span>
+                    <span class="text-zinc-300 dark:text-zinc-600">→</span>
+                @endif
+
+                @if($hasCurrent)
                     <span @class([
                         'font-medium',
-                        'text-emerald-500' => $accessoryMarginPctCurrent >= ($accessoryMarginPctPrevious ?? $accessoryMarginPctCurrent),
-                        'text-red-400'     => $accessoryMarginPctCurrent <  ($accessoryMarginPctPrevious ?? $accessoryMarginPctCurrent),
-                    ])>{{ $accessoryMarginPctCurrent }}%</span>
-                </div>
+                        'text-emerald-500'                 => $improved,
+                        'text-red-400'                     => $hasPrevious && ! $improved,
+                        'text-zinc-600 dark:text-zinc-300' => ! $hasPrevious,
+                    ])>{{ number_format($accessoryMarginPctCurrent, 2, ',', ' ') }}%</span>
+                @elseif($hasPrevious)
+                    <span class="text-zinc-400 dark:text-zinc-500">—</span>
+                @else
+                    <span class="font-medium text-amber-500">brak danych</span>
+                @endif
             </div>
-        @endif
+        </div>
 
     </div>
 </div>

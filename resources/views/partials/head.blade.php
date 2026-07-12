@@ -23,4 +23,10 @@
 </script>
 
 @vite(['resources/css/app.css', 'resources/js/app.js'])
-@fluxAppearance
+
+<script>
+    // Force dark mode — light mode disabled intentionally
+    document.documentElement.classList.add('dark');
+</script>
+
+{{-- @fluxAppearance --}}
