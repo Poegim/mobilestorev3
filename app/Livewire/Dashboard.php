@@ -229,57 +229,80 @@ class Dashboard extends Component
 
     private function getCategoryStats(CarbonInterface $from, ?CarbonInterface $to = null): array
     {
-        $baseQuery = fn () => $this->soldItemsQuery($from, $to);
-
-        $deviceCategoryIds = $this->getDescendantCategoryIds(2);
+        $deviceCategoryIds    = $this->getDescendantCategoryIds(2);
         $accessoryCategoryIds = $this->getDescendantCategoryIds(3);
 
-        // Devices
-        $devicesQuery = fn () => (clone $baseQuery())
-            ->where('sells_items.item_id', '>', 0)
-            ->whereHas('item.product', fn ($q) => $q->whereIn('parent_category_id', $deviceCategoryIds));
+        // Fast counts/sums via JOIN instead of whereHas
+        $base = fn () => $this->soldItemsQuery($from, $to)
+            ->leftJoin('items', 'items.id', '=', 'sells_items.item_id')
+            ->leftJoin('products', 'products.id', '=', 'items.product_id');
 
-        $devicesRevenue = (clone $devicesQuery())->sum('sells_items.price');
-        $devicesCount = (clone $devicesQuery())->count();
+        $devicesRevenue = (clone $base())
+            ->whereIn('products.parent_category_id', $deviceCategoryIds)
+            ->sum('sells_items.price');
 
-        // Accessories
-        $accessoriesQuery = fn () => (clone $baseQuery())
-            ->where('sells_items.item_id', '>', 0)
-            ->whereHas('item.product', fn ($q) => $q->whereIn('parent_category_id', $accessoryCategoryIds));
+        $devicesCount = (clone $base())
+            ->whereIn('products.parent_category_id', $deviceCategoryIds)
+            ->count();
 
-        $accessoriesRevenue = (clone $accessoriesQuery())->sum('sells_items.price');
-        $accessoriesCount = (clone $accessoriesQuery())->count();
+        $accessoriesRevenue = (clone $base())
+            ->whereIn('products.parent_category_id', $accessoryCategoryIds)
+            ->sum('sells_items.price');
 
-        // Services
-        $servicesQuery = fn () => (clone $baseQuery())->where('sells_items.service_id', '>', 0);
+        $accessoriesCount = (clone $base())
+            ->whereIn('products.parent_category_id', $accessoryCategoryIds)
+            ->count();
 
-        $servicesRevenue = (clone $servicesQuery())->sum('sells_items.price');
-        $servicesCount = (clone $servicesQuery())->count();
+        $servicesRevenue = $this->soldItemsQuery($from, $to)
+            ->where('sells_items.service_id', '>', 0)
+            ->sum('sells_items.price');
+
+        $servicesCount = $this->soldItemsQuery($from, $to)
+            ->where('sells_items.service_id', '>', 0)
+            ->count();
 
         $stats = [
-            'devices' => ['revenue' => $devicesRevenue, 'count' => $devicesCount],
+            'devices'     => ['revenue' => $devicesRevenue,     'count' => $devicesCount],
             'accessories' => ['revenue' => $accessoriesRevenue, 'count' => $accessoriesCount],
-            'services' => ['revenue' => $servicesRevenue, 'count' => $servicesCount],
+            'services'    => ['revenue' => $servicesRevenue,    'count' => $servicesCount],
         ];
 
         if (auth()->user()->isAdmin()) {
-            $stats['devices']['profit'] = (clone $devicesQuery())
+            // Profit via chunk — avoids loading all models at once
+            $devicesProfit     = 0;
+            $accessoriesProfit = 0;
+            $servicesProfit    = 0;
+
+            // Devices profit
+            (clone $base())
+                ->whereIn('products.parent_category_id', $deviceCategoryIds)
                 ->with(['item.purchasedItem.tax'])
-                ->get()
-                ->sum(fn ($si) => $si->getIncome());
+                ->select('sells_items.*')
+                ->chunk(500, function ($items) use (&$devicesProfit) {
+                    $devicesProfit += $items->sum(fn ($si) => $si->getIncome());
+                });
 
-            $stats['accessories']['profit'] = (clone $accessoriesQuery())
+            // Accessories profit
+            (clone $base())
+                ->whereIn('products.parent_category_id', $accessoryCategoryIds)
                 ->with(['item.purchasedItem.tax'])
-                ->get()
-                ->sum(fn ($si) => $si->getIncome());
+                ->select('sells_items.*')
+                ->chunk(500, function ($items) use (&$accessoriesProfit) {
+                    $accessoriesProfit += $items->sum(fn ($si) => $si->getIncome());
+                });
 
-            $stats['services']['profit'] = (clone $servicesQuery())
-                ->get()
-                ->sum(fn ($si) => $si->price - $si->internal_cost);
+            // Services profit — lightweight, no joins needed
+            $this->soldItemsQuery($from, $to)
+                ->where('sells_items.service_id', '>', 0)
+                ->select('sells_items.price', 'sells_items.internal_cost')
+                ->chunk(500, function ($items) use (&$servicesProfit) {
+                    $servicesProfit += $items->sum(fn ($si) => $si->price - $si->internal_cost);
+                });
 
-            $stats['totalProfit'] = $stats['devices']['profit']
-                + $stats['accessories']['profit']
-                + $stats['services']['profit'];
+            $stats['devices']['profit']     = $devicesProfit;
+            $stats['accessories']['profit'] = $accessoriesProfit;
+            $stats['services']['profit']    = $servicesProfit;
+            $stats['totalProfit']           = $devicesProfit + $accessoriesProfit + $servicesProfit;
         }
 
         return $stats;
