@@ -3,12 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class Shop extends Model
 {
-    
     protected $fillable = [
-        'name', 'email', 'phone', 'color',
+        'name', 'short_name', 'slug', 'description',
+        'email', 'phone', 'color', 'avatar',
         'address_city', 'address_postal_code', 'address_street',
         'address_building_number', 'address_apartment_number',
         'order', 'archive',
@@ -17,6 +18,12 @@ class Shop extends Model
     protected $casts = [
         'archive' => 'boolean',
     ];
+
+    // Public URL of the uploaded photo, or null to fall back to initials.
+    public function getAvatarUrlAttribute(): ?string
+    {
+        return $this->avatar ? Storage::disk('public')->url($this->avatar) : null;
+    }
 
     public function users()
     {

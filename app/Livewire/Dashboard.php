@@ -12,6 +12,7 @@ use App\Models\SoldItem;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
+use Livewire\Attributes\Computed;
 use Livewire\Component;
 
 class Dashboard extends Component
@@ -48,11 +49,30 @@ class Dashboard extends Component
     private ?array $shopIds = null;
     private ?array $descendantCache = [];
 
+    public string $period = 'today';
+
+    #[Computed]
+    public function periodLabel(): string
+    {
+        return match($this->period) {
+            'yesterday'   => 'Wczoraj',
+            'week'        => 'Ten tydzień',
+            'month'       => 'Ten miesiąc',
+            'last30'      => 'Ostatnie 30 dni',
+            'last60'      => 'Ostatnie 60 dni',
+            'last90'      => 'Ostatnie 90 dni',
+            'quarter'     => 'Ten kwartał',
+            'lastquarter' => 'Poprzedni kwartał',
+            'year'        => 'Ten rok',
+            'lastyear'    => 'Poprzedni rok',
+            default       => 'Dziś',
+        };
+    }
+
     public function mount(?Shop $shop = null): void
     {
         $this->shop = $shop;
 
-        // Instant: lightweight counts only
         $today = Carbon::today();
 
         $this->todaySells = $this->scopeShop(
@@ -62,7 +82,13 @@ class Dashboard extends Component
 
         $this->todayRevenue = 0;
         $this->monthRevenue = 0;
-        $this->monthSells = 0;
+        $this->monthSells   = 0;
+
+        // Auto-load default modules on first render
+        if (auth()->user()->isAdmin()) {
+            $this->loadRevenueStats();
+        }
+        $this->loadShopStats();
     }
 
     // region Lazy-load actions
@@ -73,12 +99,17 @@ class Dashboard extends Component
      */
     public function loadRevenueStats(): void
     {
-        $today = Carbon::today();
+        [$from, $to] = $this->getPeriodRange();
+
+        $this->todayRevenue = $this->soldItemsQuery($from, $to)->sum('sells_items.price');
+        $this->todayCategories = $this->getCategoryStats($from, $to);
+
+        $this->todaySells = $this->scopeShop(
+            Sell::where('valid', 1)->whereBetween('created_at', [$from, $to])
+        )->count();
+
+        // Month summary stays as reference point — always current month
         $thisMonth = Carbon::now()->startOfMonth();
-
-        $this->todayRevenue = $this->soldItemsQuery($today)->sum('sells_items.price');
-        $this->todayCategories = $this->getCategoryStats($today);
-
         $this->monthRevenue = $this->soldItemsQuery($thisMonth, now())->sum('sells_items.price');
         $this->monthSells = $this->scopeShop(
             Sell::where('valid', 1)->where('created_at', '>=', $thisMonth)
@@ -271,98 +302,42 @@ class Dashboard extends Component
                 ? Shop::where('archive', false)->orderBy('order')->get()
                 : $user->shops()->where('archive', false)->orderBy('order')->get());
 
-        $todayStart = Carbon::today()->startOfDay()->toImmutable();
-        $todayEnd = Carbon::today()->endOfDay()->toImmutable();
-        $monthStart = Carbon::now()->startOfMonth()->toImmutable();
+        [$from, $to] = $this->getPeriodRange();
+        $fromImmutable = $from->toImmutable();
+        $toImmutable   = $to->toImmutable();
 
-        $deviceCategoryIds = $this->getDescendantCategoryIds(2);
+        $deviceCategoryIds    = $this->getDescendantCategoryIds(2);
         $accessoryCategoryIds = $this->getDescendantCategoryIds(3);
 
-        return $shops->map(function (Shop $shop) use ($todayStart, $todayEnd, $monthStart, $deviceCategoryIds, $accessoryCategoryIds) {
+        return $shops->map(function (Shop $shop) use ($fromImmutable, $toImmutable, $deviceCategoryIds, $accessoryCategoryIds) {
             $stock = Item::where('parent_shop_id', $shop->id)
                 ->where('status', ItemStatus::Store)
                 ->count();
 
-            // Today sold items for this shop
-            $todaySoldItems = SoldItem::where('sells_items.valid', 1)
+            $soldItems = SoldItem::where('sells_items.valid', 1)
                 ->join('sells', fn ($j) => $j
                     ->on('sells.id', '=', 'sells_items.sell_id')
                     ->where('sells.valid', 1)
                     ->where('sells.parent_shop_id', $shop->id)
                 )
-                ->whereBetween('sells.created_at', [$todayStart, $todayEnd]);
+                ->whereBetween('sells.created_at', [$fromImmutable, $toImmutable]);
 
-            $todayTransactions = Sell::where('valid', 1)
+            $transactions = Sell::where('valid', 1)
                 ->where('parent_shop_id', $shop->id)
-                ->whereBetween('created_at', [$todayStart, $todayEnd])
+                ->whereBetween('created_at', [$fromImmutable, $toImmutable])
                 ->count();
 
-            $todayTotal = (clone $todaySoldItems)->count();
-
-            $todayDevices = (clone $todaySoldItems)
-                ->where('sells_items.item_id', '>', 0)
-                ->whereHas('item.product', fn ($q) => $q->whereIn('parent_category_id', $deviceCategoryIds))
-                ->count();
-
-            $todayAccessories = (clone $todaySoldItems)
-                ->where('sells_items.item_id', '>', 0)
-                ->whereHas('item.product', fn ($q) => $q->whereIn('parent_category_id', $accessoryCategoryIds))
-                ->count();
-
-            $todayServices = (clone $todaySoldItems)
-                ->where('sells_items.service_id', '>', 0)
-                ->count();
-
-            $todayRevenue = (clone $todaySoldItems)->sum('sells_items.price');
-
-            // Month sold items for this shop
-            $monthSoldItems = SoldItem::where('sells_items.valid', 1)
-                ->join('sells', fn ($j) => $j
-                    ->on('sells.id', '=', 'sells_items.sell_id')
-                    ->where('sells.valid', 1)
-                    ->where('sells.parent_shop_id', $shop->id)
-                )
-                ->where('sells.created_at', '>=', $monthStart);
-
-            $monthTransactions = Sell::where('valid', 1)
-                ->where('parent_shop_id', $shop->id)
-                ->where('created_at', '>=', $monthStart)
-                ->count();
-
-            $monthTotal = (clone $monthSoldItems)->count();
-
-            $monthDevices = (clone $monthSoldItems)
-                ->where('sells_items.item_id', '>', 0)
-                ->whereHas('item.product', fn ($q) => $q->whereIn('parent_category_id', $deviceCategoryIds))
-                ->count();
-
-            $monthAccessories = (clone $monthSoldItems)
-                ->where('sells_items.item_id', '>', 0)
-                ->whereHas('item.product', fn ($q) => $q->whereIn('parent_category_id', $accessoryCategoryIds))
-                ->count();
-
-            $monthServices = (clone $monthSoldItems)
-                ->where('sells_items.service_id', '>', 0)
-                ->count();
+            $total       = (clone $soldItems)->count();
+            $devices     = (clone $soldItems)->where('sells_items.item_id', '>', 0)->whereHas('item.product', fn ($q) => $q->whereIn('parent_category_id', $deviceCategoryIds))->count();
+            $accessories = (clone $soldItems)->where('sells_items.item_id', '>', 0)->whereHas('item.product', fn ($q) => $q->whereIn('parent_category_id', $accessoryCategoryIds))->count();
+            $services    = (clone $soldItems)->where('sells_items.service_id', '>', 0)->count();
+            $revenue     = (clone $soldItems)->sum('sells_items.price');
 
             return [
-                'shop' => $shop,
+                'shop'  => $shop,
                 'stock' => $stock,
-                'today' => [
-                    'transactions' => $todayTransactions,
-                    'revenue' => $todayRevenue,
-                    'items' => $todayTotal,
-                    'devices' => $todayDevices,
-                    'accessories' => $todayAccessories,
-                    'services' => $todayServices,
-                ],
-                'month' => [
-                    'transactions' => $monthTransactions,
-                    'items' => $monthTotal,
-                    'devices' => $monthDevices,
-                    'accessories' => $monthAccessories,
-                    'services' => $monthServices,
-                ],
+                'today' => compact('transactions', 'revenue', 'total', 'devices', 'accessories', 'services'),
+                'month' => [], // unused — period switcher covers this
             ];
         });
     }
@@ -385,6 +360,35 @@ class Dashboard extends Component
         return $this->descendantCache[$parentId] = $ids;
     }
 
+    public function updatedPeriod(): void
+    {
+        $wasRevenueLoaded = $this->revenueLoaded;
+        $wasShopLoaded    = $this->shopStatsLoaded;
+
+        $this->revenueLoaded   = false;
+        $this->shopStatsLoaded = false;
+
+        if ($wasRevenueLoaded)  $this->loadRevenueStats();
+        if ($wasShopLoaded)     $this->loadShopStats();
+    }
+
+    private function getPeriodRange(): array
+    {
+        return match ($this->period) {
+            'yesterday'   => [Carbon::yesterday()->startOfDay(), Carbon::yesterday()->endOfDay()],
+            'week'        => [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()],
+            'month'       => [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()],
+            'last30'      => [Carbon::now()->subDays(30)->startOfDay(), Carbon::now()->endOfDay()],
+            'last60'      => [Carbon::now()->subDays(60)->startOfDay(), Carbon::now()->endOfDay()],
+            'last90'      => [Carbon::now()->subDays(90)->startOfDay(), Carbon::now()->endOfDay()],
+            'quarter'     => [Carbon::now()->startOfQuarter(), Carbon::now()->endOfQuarter()],
+            'lastquarter' => [Carbon::now()->subQuarter()->startOfQuarter(), Carbon::now()->subQuarter()->endOfQuarter()],
+            'year'        => [Carbon::now()->startOfYear(), Carbon::now()->endOfYear()],
+            'lastyear'    => [Carbon::now()->subYear()->startOfYear(), Carbon::now()->subYear()->endOfYear()],
+            default       => [Carbon::today()->startOfDay(), Carbon::today()->endOfDay()],
+        };
+    }
+
     public function render()
     {
         $isAdmin = auth()->user()->isAdmin();
@@ -401,6 +405,7 @@ class Dashboard extends Component
             'itemsInStock' => $itemsInStock,
             'todayPurchases' => $todayPurchases,
             'isAdmin' => $isAdmin,
+            'period' => $this->period,
         ]);
     }
 }

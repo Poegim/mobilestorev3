@@ -44,6 +44,9 @@
                     <flux:sidebar.item icon="users" :href="route('admin.users.index')" :current="request()->routeIs('admin.users.*')" wire:navigate>
                         Użytkownicy
                     </flux:sidebar.item>
+                    <flux:sidebar.item icon="building-storefront" :href="route('shops.index')" :current="request()->routeIs('shops.*')" wire:navigate>
+                        Sklepy
+                    </flux:sidebar.item>
                 @endif
             </flux:sidebar.nav>
 

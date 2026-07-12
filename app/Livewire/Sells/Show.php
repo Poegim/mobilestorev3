@@ -6,6 +6,8 @@ use App\Models\Sell;
 use App\Models\Shop;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
+use Flux\Flux;
+use Illuminate\Support\Facades\Gate;
 
 class Show extends Component
 {
@@ -22,7 +24,15 @@ class Show extends Component
     ];
 
     public function mount(Sell $sell, ?Shop $shop = null): void
-    {
+    {   
+        // Authorize with the policy; show its message as a toast instead of a 403 wall
+        $response = Gate::inspect('view', $sell);
+
+        if ($response->denied()) {
+            Flux::toast(variant: 'danger', text: $response->message());
+            $this->redirectRoute('dashboard', navigate: true);
+            return;
+        }
         $this->sell = $sell->load(self::EAGER_LOADS);
         $this->shop = $shop;
     }

@@ -40,6 +40,25 @@ class Index extends Component
         return UserPrivilege::cases();
     }
 
+    public function toggleBlock(int $userId): void
+    {
+        if ($userId === auth()->id()) {
+            \Flux::toast(variant: 'danger', text: 'Nie możesz zablokować własnego konta.');
+            return;
+        }
+
+        $user = User::findOrFail($userId);
+        $user->privilege = $user->privilege === UserPrivilege::Blocked
+            ? UserPrivilege::User1
+            : UserPrivilege::Blocked;
+        $user->save();
+
+        \Flux::toast(variant: 'success', text: $user->privilege === UserPrivilege::Blocked
+            ? 'Użytkownik zablokowany.'
+            : 'Użytkownik odblokowany.'
+        );
+    }
+
     public function render()
     {
         $query = User::with('shops')

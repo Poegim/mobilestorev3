@@ -1,6 +1,5 @@
 {{-- resources/views/livewire/admin/users/index.blade.php --}}
 <div>
-    <flux:main container>
         <div class="flex items-center justify-between mb-6">
             <flux:heading size="xl">Użytkownicy</flux:heading>
             <flux:button href="{{ route('admin.users.create') }}" wire:navigate variant="primary" icon="plus">
@@ -81,12 +80,11 @@
                                 @if($user->id !== auth()->id())
                                     <flux:button
                                         size="sm"
-                                        variant="danger"
-                                        wire:click="deleteUser({{ $user->id }})"
-                                        wire:confirm="Czy na pewno chcesz usunąć użytkownika {{ $user->name }}?"
-                                        icon="trash"
+                                        variant="{{ $user->privilege === \App\Enums\UserPrivilege::Blocked ? 'primary' : 'danger' }}"
+                                        wire:click="toggleBlock({{ $user->id }})"
+                                        icon="{{ $user->privilege === \App\Enums\UserPrivilege::Blocked ? 'lock-open' : 'lock-closed' }}"
                                     >
-                                        Usuń
+                                        {{ $user->privilege === \App\Enums\UserPrivilege::Blocked ? 'Odblokuj' : 'Zablokuj' }}
                                     </flux:button>
                                 @endif
                             </div>
@@ -101,6 +99,5 @@
                 @endforelse
             </flux:table.rows>
         </flux:table>
-    </flux:main>
 
 </div>

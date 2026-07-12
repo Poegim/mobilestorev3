@@ -14,9 +14,13 @@ return new class extends Migration
         Schema::create('shops', function (Blueprint $table) {
             $table->increments('id');
             $table->string('name', 255);
+            $table->string('short_name', 32)->unique()->nullable();  // nullable only for legacy import
+            $table->string('slug', 255)->unique()->nullable();        // nullable only for legacy import
+            $table->string('description', 255)->default('');
             $table->string('email', 64)->default('');
             $table->string('phone', 32)->default('');
             $table->string('color', 7)->default('#000000');
+            $table->string('avatar')->nullable();                     // path on `public` disk, null = initials
             $table->string('address_city', 32)->default('');
             $table->string('address_postal_code', 6)->default('');
             $table->string('address_street', 32)->default('');

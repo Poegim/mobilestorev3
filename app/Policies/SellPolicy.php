@@ -19,9 +19,11 @@ class SellPolicy
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, Sell $sell): bool
+    public function view(User $user, Sell $sell): Response
     {
-        return false;
+        return $user->hasAccessToShop($sell->shop)
+            ? Response::allow()
+            : Response::deny('Nie masz dostępu do tego paragonu.');
     }
 
     /**

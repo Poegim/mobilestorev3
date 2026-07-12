@@ -48,24 +48,12 @@ class Index extends Component
         $this->shop = $shop;
     }
 
-    public function updatedSearch(): void
+    public function updated(string $property): void
     {
-        $this->resetPage();
-    }
-
-    public function updatedPerPage(): void
-    {
-        $this->resetPage();
-    }
-
-    public function updatedPaymentMethod(): void
-    {
-        $this->resetPage();
-    }
-
-    public function updatedStatus(): void
-    {
-        $this->resetPage();
+        // Return to the first page whenever a filter changes
+        if (in_array($property, ['search', 'perPage', 'paymentMethod', 'status', 'dateFrom', 'dateTo'], true)) {
+            $this->resetPage();
+        }
     }
 
     public function updatedPeriod(): void
@@ -77,16 +65,6 @@ class Index extends Component
             $this->dateFrom = '';
             $this->dateTo = '';
         }
-        $this->resetPage();
-    }
-
-    public function updatedDateFrom(): void
-    {
-        $this->resetPage();
-    }
-
-    public function updatedDateTo(): void
-    {
         $this->resetPage();
     }
 
@@ -176,9 +154,7 @@ class Index extends Component
                 }
             });
         }
-
         
-
         return $query;
     }
 
