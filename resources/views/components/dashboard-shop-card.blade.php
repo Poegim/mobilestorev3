@@ -1,13 +1,16 @@
 @props([
-    'shopName'        => '',
-    'shopColor'       => '#000000',
-    'rank'            => null,
-    'revenue'         => 0,
-    'maxTransactions' => 0,
-    'transactions'    => 0,
-    'devices'         => 0,
-    'accessories'     => 0,
-    'services'        => 0,
+    'shopName'                   => '',
+    'shopColor'                  => '#000000',
+    'shopId'                     => null,
+    'rank'                       => null,
+    'revenue'                    => 0,
+    'maxTransactions'            => 0,
+    'transactions'               => 0,
+    'devices'                    => 0,
+    'accessories'                => 0,
+    'services'                   => 0,
+    'accessoryMarginPctCurrent'  => null,
+    'accessoryMarginPctPrevious' => null,
 ])
 
 @php
@@ -32,16 +35,14 @@
         {{-- Row: name + revenue --}}
         <div class="flex items-center justify-between gap-2">
             <div class="flex items-center gap-1.5 min-w-0">
-                <span class="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                    {{ $shopName }}
+                <span class="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100 hover:underline">
+                    <flux:link href="{{ route('dashboard', ['shop' => $shopId]) }}" wire:navigate>
+                        {{ $shopName }}
+                    </flux:link>
                 </span>
-                @if($rank)
-                    <span @class([
-                        'shrink-0 text-xs font-bold tabular-nums',
-                        'text-amber-500 dark:text-amber-400' => $rank === 1,
-                        'text-zinc-400 dark:text-zinc-600'   => $rank !== 1,
-                    ])>#{{ $rank }}</span>
-                @endif
+                <span class="shrink-0 text-xs font-medium text-zinc-400 dark:text-zinc-500">
+                    #{{ $shopId }}
+                </span>
             </div>
             <span class="shrink-0 text-xs tabular-nums text-zinc-400 dark:text-zinc-500">
                 {{ number_format($revenue / 100, 0, ',', ' ') }} zł
@@ -90,6 +91,24 @@
             </div>
         @else
             <div class="text-xs text-zinc-300 dark:text-zinc-600">Brak sprzedaży</div>
+        @endif
+
+        {{-- Accessory margin — always current vs previous month, independent of period --}}
+        @if($accessoryMarginPctCurrent !== null)
+            <div class="flex items-center justify-between text-xs pt-1.5 border-t border-zinc-100 dark:border-zinc-800">
+                <span class="text-zinc-400 dark:text-zinc-500">Marża akc.</span>
+                <div class="flex items-center gap-1.5 tabular-nums">
+                    @if($accessoryMarginPctPrevious !== null)
+                        <span class="text-zinc-400 dark:text-zinc-500">{{ $accessoryMarginPctPrevious }}%</span>
+                        <span class="text-zinc-300 dark:text-zinc-600">→</span>
+                    @endif
+                    <span @class([
+                        'font-medium',
+                        'text-emerald-500' => $accessoryMarginPctCurrent >= ($accessoryMarginPctPrevious ?? $accessoryMarginPctCurrent),
+                        'text-red-400'     => $accessoryMarginPctCurrent <  ($accessoryMarginPctPrevious ?? $accessoryMarginPctCurrent),
+                    ])>{{ $accessoryMarginPctCurrent }}%</span>
+                </div>
+            </div>
         @endif
 
     </div>

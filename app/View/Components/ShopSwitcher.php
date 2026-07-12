@@ -28,7 +28,7 @@ class ShopSwitcher extends Component
         $user = auth()->user();
         $this->shops = $user->isAdmin()
             ? Shop::where('archive', false)->orderBy('order')->get()
-            : $user->shops()->where('archive', false)->orderBy('order')->get();
+            : $user->shops()->where('archive', false)->orderBy('order')->orderBy('id')->get();
     }
 
     public function render(): View

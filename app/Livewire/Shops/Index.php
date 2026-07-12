@@ -233,6 +233,12 @@ class Index extends Component
         $this->color = '#000000';
     }
 
+    public function updateOrder(int $shopId, int $order): void
+    {
+        Shop::where('id', $shopId)->update(['order' => $order]);
+        $this->dispatch('order-updated');
+    }
+
     public function render()
     {
         $shops = Shop::query()

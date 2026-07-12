@@ -17,6 +17,7 @@
     <flux:table :paginate="$shops">
         <flux:table.columns>
             <flux:table.column>Sklep</flux:table.column>
+            <flux:table.column>Kolejność</flux:table.column>
             <flux:table.column>Adres</flux:table.column>
             <flux:table.column>Kontakt</flux:table.column>
             <flux:table.column>Status</flux:table.column>
@@ -35,6 +36,16 @@
                                 <flux:text size="sm" variant="subtle">{{ $shop->short_name }}</flux:text>
                             </div>
                         </div>
+                    </flux:table.cell>
+                    <flux:table.cell>
+                        <flux:input
+                            type="number"
+                            value="{{ $shop->order }}"
+                            wire:change="updateOrder({{ $shop->id }}, $event.target.value)"
+                            class="w-20"
+                            min="1"
+                            size="sm"
+                        />
                     </flux:table.cell>
                     <flux:table.cell>
                         {{ $shop->address_street }} {{ $shop->address_building_number }}{{ $shop->address_apartment_number ? '/'.$shop->address_apartment_number : '' }},

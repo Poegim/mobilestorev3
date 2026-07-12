@@ -251,6 +251,7 @@
                         <x-dashboard-shop-card
                             :shop-name="$stat['shopName']"
                             :shop-color="$stat['shopColor']"
+                            :shop-id="$stat['shopId']"
                             :rank="$stat['rank']"
                             :revenue="$stat['revenue']"
                             :transactions="$stat['transactions']"

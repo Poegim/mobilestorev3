@@ -17,10 +17,6 @@ class Transfer extends Model
         'finished_at' => 'datetime',
     ];
 
-    protected $casts = [
-        'status' => TransferStatus::class,
-    ];
-
     public function sourceShop()
     {
         return $this->belongsTo(Shop::class, 'parent_shop_id');
