@@ -59,6 +59,9 @@
             {{ $transactions }} {{ $transactions === 1 ? 'sprzedaż' : 'sprzedaży' }}
             <span class="text-zinc-300 dark:text-zinc-600">·</span>
             {{ $total }} szt.
+            <span class="text-zinc-300 dark:text-zinc-600">·</span>
+            {{ number_format($transactions > 0 ? $total / $transactions : 0, 2) }} szt./sprzedaż     
+
         </div>
 
         @if($total > 0)
