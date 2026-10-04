@@ -1,27 +1,35 @@
+@php
+    $label = $currentShop ? ($currentShop->short_name ?? $currentShop->name) : 'Wszystkie sklepy';
+@endphp
+
 <flux:dropdown position="bottom" align="start">
 
     <button
         type="button"
-        class="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm transition-colors text-left @if($currentShop) border-l-[6px] border-y border-r pl-[calc(0.5rem-4px)] @else hover:bg-zinc-100 dark:hover:bg-zinc-800 @endif"
+        title="{{ $label }}"
+        class="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm transition-colors text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 in-data-flux-sidebar-collapsed-desktop:justify-center in-data-flux-sidebar-collapsed-desktop:gap-0 in-data-flux-sidebar-collapsed-desktop:px-0"
         @if($currentShop)
             style="
-                border-color: {{ $currentShop->color }};
-                background: color-mix(in oklch, {{ $currentShop->color }} 30%, transparent);
+                background: color-mix(in oklch, {{ $currentShop->color }} 20%, transparent);
+                box-shadow: inset 0 -3px 0 0 {{ $currentShop->color }};
             "
         @endif
     >
         <flux:avatar
-            name="{{ $currentShop ? ($currentShop->short_name ?? $currentShop->name) : '' }}"
+            name="{{ $currentShop ? $label : '' }}"
             :icon="$currentShop ? null : 'building-storefront'"
             size="sm"
             class="shrink-0"
         />
 
-        <span class="flex-1 truncate font-semibold text-zinc-900 dark:text-zinc-100">
-            {{ $currentShop ? ($currentShop->short_name ?? $currentShop->name) : 'Wszystkie sklepy' }}
+        <span class="flex-1 truncate font-semibold text-zinc-900 dark:text-zinc-100 in-data-flux-sidebar-collapsed-desktop:hidden">
+            {{ $label }}
         </span>
 
-        <flux:icon.chevrons-up-down variant="micro" class="size-3.5 shrink-0 text-zinc-400" />
+        <flux:icon.chevrons-up-down
+            variant="micro"
+            class="size-3.5 shrink-0 text-zinc-400 in-data-flux-sidebar-collapsed-desktop:hidden"
+        />
     </button>
 
     <flux:menu class="min-w-52">

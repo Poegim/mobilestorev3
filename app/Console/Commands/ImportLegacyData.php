@@ -236,7 +236,7 @@ class ImportLegacyData extends Command
                     'privilege' => $r['privilege'],
                     'login' => $r['login'],
                     'name' => $r['login'],
-                    'email' => null,
+                    'email' => '' . $r['login'] . '@example.com',
                     'password' => $r['password'],
                     'email_verified_at' => null,
                     'created_at' => now(),
