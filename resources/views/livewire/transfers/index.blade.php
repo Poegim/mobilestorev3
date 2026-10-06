@@ -1,5 +1,14 @@
 <div>
-    <flux:heading size="xl" class="mb-4">Transfery</flux:heading>
+    <div class="mb-4 flex items-center justify-between">
+        <flux:heading size="xl">Transfery</flux:heading>
+
+        {{-- Carts are per source shop, so creating is only possible inside a shop --}}
+        @if($this->shop)
+            <flux:button variant="primary" icon="plus" :href="route('shop.transfers.create', $this->shop)" wire:navigate>
+                Nowy transfer
+            </flux:button>
+        @endif
+    </div>
 
     <div class="mb-4 flex gap-3">
         @if($this->shop)
@@ -33,17 +42,32 @@
         <flux:table.rows>
             @forelse($transfers as $transfer)
                 <flux:table.row>
-                    <flux:table.cell variant="strong">#{{ $transfer->id }}</flux:table.cell>
-                    <flux:table.cell>{{ $transfer->sourceShop?->name ?? '—' }}</flux:table.cell>
-                    <flux:table.cell>{{ $transfer->targetShop?->name ?? '—' }}</flux:table.cell>
+                    <flux:table.cell variant="strong">
+                        @php
+                            $showRoute = $this->shop
+                                ? route('shop.transfers.show', [$this->shop, $transfer])
+                                : route('transfers.show', $transfer);
+                        @endphp
+                        <flux:link href="{{ $showRoute }}" wire:navigate>#{{ $transfer->id }}</flux:link>
+                    </flux:table.cell>
+                    <flux:table.cell>{{ $transfer->sourceShop?->short_name ?: $transfer->sourceShop?->name ?? '—' }}</flux:table.cell>
+                    <flux:table.cell>{{ $transfer->targetShop?->short_name ?: $transfer->targetShop?->name ?? '—' }}</flux:table.cell>
                     <flux:table.cell>{{ $transfer->transfer_items_count }}</flux:table.cell>
                     <flux:table.cell>
                         <flux:badge size="sm" :color="$transfer->status->color()">
                             {{ $transfer->status->label() }}
                         </flux:badge>
                     </flux:table.cell>
-                    <flux:table.cell>{{ $transfer->creator?->login ?? '—' }}</flux:table.cell>
-                    <flux:table.cell>{{ $transfer->created_at?->format('d.m.Y H:i') ?? '—' }}</flux:table.cell>
+                    <flux:table.cell>
+                        @if($transfer->creator)
+                            <div class="flex items-center gap-2">
+                                <flux:avatar size="sm">{{ $transfer->creator->initials() }}</flux:avatar>
+                                <span class="font-medium">{{ $transfer->creator->name }}</span>
+                            </div>
+                        @else
+                            —
+                        @endif
+                    </flux:table.cell>                    <flux:table.cell>{{ $transfer->created_at?->format('d.m.Y H:i') ?? '—' }}</flux:table.cell>
                     <flux:table.cell>{{ $transfer->finished_at?->format('d.m.Y H:i') ?? '—' }}</flux:table.cell>
                 </flux:table.row>
             @empty

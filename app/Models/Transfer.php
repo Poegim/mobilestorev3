@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\TransferStatus;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 
 class Transfer extends Model
 {
@@ -50,5 +51,24 @@ class Transfer extends Model
     public function items()
     {
         return $this->belongsToMany(Item::class, 'transfers_items', 'transfer_id', 'item_id');
+    }
+
+    /**
+     * Active transfers waiting to be received by the given user.
+     * Inside a shop: only that shop. Without a shop: all shops of the user (admin: all).
+     */
+    public function scopeAwaitingReceiptFor(Builder $query, User $user, ?Shop $shop = null): Builder
+    {
+        $query->where('status', TransferStatus::Active->value);
+
+        if ($shop) {
+            return $query->where('target_shop_id', $shop->id);
+        }
+
+        if (! $user->isAdmin()) {
+            $query->whereIn('target_shop_id', $user->shops()->pluck('shops.id'));
+        }
+
+        return $query;
     }
 }

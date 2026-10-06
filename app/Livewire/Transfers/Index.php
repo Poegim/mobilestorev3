@@ -20,8 +20,9 @@ class Index extends Component
     #[Url]
     public string $direction = 'all';
 
+    /** Default: only transfers in progress ("1" = TransferStatus::Active); empty string = all */
     #[Url]
-    public string $status = '';
+    public string $status = '1';
 
     #[Url]
     public int $perPage = 25;

@@ -22,6 +22,7 @@
                     $currentShop = request()->route('shop');
                     $shopParam = $currentShop ? ['shop' => $currentShop] : [];
                     $routePrefix = $currentShop ? 'shop.' : '';
+                    $incomingTransfers = \App\Models\Transfer::awaitingReceiptFor(auth()->user(), $currentShop)->count();
                 @endphp
 
                 <flux:sidebar.item icon="home" :href="route($routePrefix . 'dashboard', $shopParam)" :current="request()->routeIs('*dashboard')" wire:navigate>
@@ -36,7 +37,7 @@
                 <flux:sidebar.item icon="truck" :href="route($routePrefix . 'purchases.index', $shopParam)" :current="request()->routeIs('*purchases.*')" wire:navigate>
                     Zakupy
                 </flux:sidebar.item>
-                <flux:sidebar.item icon="arrows-right-left" :href="route($routePrefix . 'transfers.index', $shopParam)" :current="request()->routeIs('*transfers.*')" wire:navigate>
+                <flux:sidebar.item icon="arrows-right-left" :href="route($routePrefix . 'transfers.index', $shopParam)" :current="request()->routeIs('*transfers.*')" :badge="$incomingTransfers ?: null" badge:color="amber" wire:navigate>
                     Transfery
                 </flux:sidebar.item>
                 {{-- Admin-only: user management --}}
@@ -68,6 +69,11 @@
                 <flux:toast />
             </flux:toast.group>
         @endpersist
+
+        {{-- Show a toast flashed by the previous request (e.g. after a redirect) --}}
+        @if(session('toast'))
+            <div x-data x-init="Flux.toast(@js(session('toast')))"></div>
+        @endif
 
         @fluxScripts
     </body>
