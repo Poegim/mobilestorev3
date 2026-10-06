@@ -69,8 +69,7 @@
             <flux:modal name="receive" class="min-w-[22rem]">
                 <flux:heading size="lg">Przyjąć transfer?</flux:heading>
                 <flux:text class="mt-2">
-                    {{ $transfer->transferItems->count() }} szt. trafi na magazyn sklepu {{ $transfer->targetShop?->name }}.
-                </flux:text>
+                    {{ $transfer->transfer_items_count }} szt. trafi na magazyn sklepu {{ $transfer->targetShop?->short_name ?: $transfer->targetShop?->name }}.                </flux:text>
                 <div class="mt-6 flex justify-end gap-2">
                     <flux:modal.close><flux:button variant="ghost">Wróć</flux:button></flux:modal.close>
                     <flux:button variant="primary" wire:click="receive">Przyjmij</flux:button>
@@ -103,7 +102,7 @@
         @endif
     @endif
 
-    <flux:table>
+    <flux:table :paginate="$lines">
         <flux:table.columns>
             <flux:table.column>ID</flux:table.column>
             <flux:table.column>Produkt</flux:table.column>
@@ -112,7 +111,7 @@
         </flux:table.columns>
 
         <flux:table.rows>
-            @forelse($transfer->transferItems as $line)
+            @forelse($lines as $line)
                 <flux:table.row wire:key="transfer-line-{{ $line->id }}">
                     <flux:table.cell variant="strong">{{ $line->item_id }}</flux:table.cell>
                     <flux:table.cell>

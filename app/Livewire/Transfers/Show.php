@@ -11,9 +11,12 @@ use DomainException;
 use Flux\Flux;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 class Show extends Component
 {
+    use WithPagination;
+
     public Transfer $transfer;
 
     public ?Shop $shop = null;
@@ -23,9 +26,9 @@ class Show extends Component
         'targetShop',
         'creator',
         'finisher',
-        'transferItems.item.product.brand',
-        'transferItems.item.condition',
     ];
+
+    private const PER_PAGE = 25;
 
     public function mount(Transfer $transfer, ?Shop $shop = null): void
     {
@@ -35,7 +38,7 @@ class Show extends Component
             403
         );
 
-        $this->transfer = $transfer->load(self::EAGER_LOADS);
+        $this->transfer = $transfer->load(self::EAGER_LOADS)->loadCount('transferItems');
         $this->shop = $shop;
     }
 
@@ -107,11 +110,11 @@ class Show extends Component
             });
         } catch (DomainException $e) {
             $this->addError('action', $e->getMessage());
-            $this->transfer = $this->transfer->fresh(self::EAGER_LOADS);
+            $this->refreshTransfer();
             return;
         }
 
-        $this->transfer = $this->transfer->fresh(self::EAGER_LOADS);
+        $this->refreshTransfer();
 
         Flux::modals()->close();
         Flux::toast(heading: $toastHeading, text: "Transfer #{$this->transfer->id}", variant: 'success');
@@ -135,6 +138,11 @@ class Show extends Component
             || $this->hasAccessTo($this->transfer->target_shop_id);
     }
 
+    private function refreshTransfer(): void
+    {
+        $this->transfer = $this->transfer->fresh(self::EAGER_LOADS)->loadCount('transferItems');
+    }
+
     public function render()
     {
         $isActive = $this->transfer->status === TransferStatus::Active;
@@ -142,6 +150,10 @@ class Show extends Component
         return view('livewire.transfers.show', [
             'canReceive'      => $isActive && $this->mayReceive(),
             'canCancelOrLose' => $isActive && $this->mayCancelOrLose(),
+            'lines'           => $this->transfer->transferItems()
+                ->with(['item.product.brand', 'item.condition'])
+                ->orderBy('id')
+                ->paginate(self::PER_PAGE),
             'backUrl'         => $this->shop
                 ? route('shop.transfers.index', $this->shop)
                 : route('transfers.index'),
