@@ -31,15 +31,33 @@
                 <flux:sidebar.item icon="archive-box" :href="route($routePrefix . 'items.index', $shopParam)" :current="request()->routeIs('*items.*')" wire:navigate>
                     Magazyn
                 </flux:sidebar.item>
-                <flux:sidebar.item icon="shopping-cart" :href="route($routePrefix . 'sells.index', $shopParam)" :current="request()->routeIs('*sells.*')" wire:navigate>
+                <x-sidebar-item-with-new
+                    icon="shopping-cart"
+                    :href="route($routePrefix . 'sells.index', $shopParam)"
+                    :current="request()->routeIs('*sells.*')"
+                    :new-href="$currentShop ? '#' : null"
+                >
                     Sprzedaż
-                </flux:sidebar.item>
-                <flux:sidebar.item icon="truck" :href="route($routePrefix . 'purchases.index', $shopParam)" :current="request()->routeIs('*purchases.*')" wire:navigate>
+                </x-sidebar-item-with-new>
+
+                <x-sidebar-item-with-new
+                    icon="truck"
+                    :href="route($routePrefix . 'purchases.index', $shopParam)"
+                    :current="request()->routeIs('*purchases.*')"
+                    :new-href="$currentShop ? '#' : null"
+                >
                     Zakupy
-                </flux:sidebar.item>
-                <flux:sidebar.item icon="arrows-right-left" :href="route($routePrefix . 'transfers.index', $shopParam)" :current="request()->routeIs('*transfers.*')" :badge="$incomingTransfers ?: null" badge:color="amber" wire:navigate>
+                </x-sidebar-item-with-new>
+
+                <x-sidebar-item-with-new
+                    icon="arrows-right-left"
+                    :href="route($routePrefix . 'transfers.index', $shopParam)"
+                    :current="request()->routeIs('*transfers.*')"
+                    :badge="$incomingTransfers ?: null"
+                    :new-href="$currentShop ? route('shop.transfers.create', $currentShop) : null"
+                >
                     Transfery
-                </flux:sidebar.item>
+                </x-sidebar-item-with-new>
                 {{-- Admin-only: user management --}}
                 @if(auth()->user()?->isAdmin())
                     <flux:sidebar.item icon="users" :href="route('admin.users.index')" :current="request()->routeIs('admin.users.*')" wire:navigate>
