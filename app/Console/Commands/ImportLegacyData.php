@@ -183,6 +183,15 @@ class ImportLegacyData extends Command
         ]);
     }
 
+    /**
+     * Safely truncate a string to a max number of characters (multibyte-aware).
+     * Plain substr() cuts by bytes and breaks UTF-8 characters.
+     */
+    private function trunc(mixed $value, int $max): string
+    {
+        return mb_substr((string) ($value ?? ''), 0, $max, 'UTF-8');
+    }
+
     private function importContacts(): void
     {
         $count = 0;
@@ -202,13 +211,14 @@ class ImportLegacyData extends Command
                 $name = $companyNames[$r['id']] ?? $peopleNames[$r['id']] ?? '';
                 $batch[] = [
                     'id' => $r['id'],
-                    'name' => $name,
-                    'identity_number' => $r['identity_number'] ?? '',
-                    'email' => $r['email'] ?? '',
-                    'phone' => $r['phone'] ?? '',
-                    'city' => $r['city'] ?? '',
-                    'postal_code' => is_string($r['postal_code']) ? substr($r['postal_code'], 0, 16) : '',
-                    'street' => $r['street'] ?? '',
+                    'name' => $this->trunc($name, 255),
+                    'identity_number' => $this->trunc($r['identity_number'], 32),
+                    'email' => $this->trunc($r['email'], 48),
+                    // Legacy has separate phone/mobile columns; fall back to mobile when phone is empty
+                    'phone' => $this->trunc($r['phone'] ?: ($r['mobile'] ?? ''), 16),
+                    'city' => $this->trunc($r['city'], 32),
+                    'postal_code' => $this->trunc($r['postal_code'], 16),
+                    'street' => $this->trunc($r['street'], 32),
                     'notes' => $r['notes'] ?? null,
                     'created_at' => now(),
                     'updated_at' => now(),

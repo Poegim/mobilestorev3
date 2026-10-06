@@ -36,7 +36,7 @@
                 <flux:sidebar.item icon="truck" :href="route($routePrefix . 'purchases.index', $shopParam)" :current="request()->routeIs('*purchases.*')" wire:navigate>
                     Zakupy
                 </flux:sidebar.item>
-                <flux:sidebar.item icon="arrows-right-left" :href="route($routePrefix . 'dashboard', $shopParam)" :current="request()->routeIs('*transfers.*')" wire:navigate>
+                <flux:sidebar.item icon="arrows-right-left" :href="route($routePrefix . 'transfers.index', $shopParam)" :current="request()->routeIs('*transfers.*')" wire:navigate>
                     Transfery
                 </flux:sidebar.item>
                 {{-- Admin-only: user management --}}

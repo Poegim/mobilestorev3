@@ -5,6 +5,7 @@ use App\Livewire\Items\Index as ItemsIndex;
 use App\Livewire\Purchases\Index as PurchasesIndex;
 use App\Livewire\Sells\Index as SellsIndex;
 use App\Livewire\Sells\Show as SellsShow;
+use App\Livewire\Transfers\Index as TransfersIndex;
 use App\Livewire\Admin\Users\Create as AdminUsersCreate;
 use App\Livewire\Admin\Users\Index as AdminUsersIndex;
 use App\Livewire\Admin\Users\Show as AdminUsersShow;
@@ -20,6 +21,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('sells/{sell}', SellsShow::class)->name('sells.show');
     Route::get('purchases', PurchasesIndex::class)->name('purchases.index');
     Route::get('shops', ShopsIndex::class)->name('shops.index');
+    Route::get('transfers', TransfersIndex::class)->name('transfers.index');
 
     Route::prefix('shop/{shop}')->name('shop.')->scopeBindings()->group(function () {
         Route::get('dashboard', Dashboard::class)->name('dashboard');
@@ -27,6 +29,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('sells', SellsIndex::class)->name('sells.index');
         Route::get('sells/{sell}', SellsShow::class)->name('sells.show');
         Route::get('purchases', PurchasesIndex::class)->name('purchases.index');
+        Route::get('transfers', TransfersIndex::class)->name('transfers.index');
     });
 });
 
