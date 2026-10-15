@@ -73,3 +73,16 @@ select:focus[data-flux-control] {
 .animate-pulse-once {
     animation: pulse-once 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
+
+/* Native option lists are rendered by the browser, so style them explicitly */
+select option,
+select optgroup {
+    background-color: var(--color-white);
+    color: var(--color-zinc-900);
+}
+
+.dark select option,
+.dark select optgroup {
+    background-color: var(--color-zinc-800);
+    color: var(--color-zinc-100);
+}

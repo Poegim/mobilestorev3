@@ -50,7 +50,7 @@
         <div class="mb-6 flex gap-2">
             @if($canReceive)
                 <flux:modal.trigger name="receive">
-                    <flux:button variant="primary" icon="check">Przyjmij</flux:button>
+                    <flux:button variant="primary" color="green" icon="check">Przyjmij</flux:button>
                 </flux:modal.trigger>
             @endif
 
@@ -72,7 +72,7 @@
                     {{ $transfer->transfer_items_count }} szt. trafi na magazyn sklepu {{ $transfer->targetShop?->short_name ?: $transfer->targetShop?->name }}.                </flux:text>
                 <div class="mt-6 flex justify-end gap-2">
                     <flux:modal.close><flux:button variant="ghost">Wróć</flux:button></flux:modal.close>
-                    <flux:button variant="primary" wire:click="receive">Przyjmij</flux:button>
+                    <flux:button variant="primary" color="green" wire:click="receive">Przyjmij</flux:button>
                 </div>
             </flux:modal>
         @endif
@@ -107,7 +107,7 @@
             <flux:table.column>ID</flux:table.column>
             <flux:table.column>Produkt</flux:table.column>
             <flux:table.column>Stan</flux:table.column>
-            <flux:table.column>Status itema</flux:table.column>
+            <flux:table.column>Status przemiotu</flux:table.column>
         </flux:table.columns>
 
         <flux:table.rows>
