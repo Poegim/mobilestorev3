@@ -6,19 +6,23 @@
 
     <flux:card class="mb-6">
         <div class="grid grid-cols-2 gap-6 lg:grid-cols-4">
-            <div>
-                <flux:subheading>Z</flux:subheading>
-                <flux:heading class="mt-1">
-                    {{ $transfer->sourceShop?->short_name ?: $transfer->sourceShop?->name ?? '—' }}
-                </flux:heading>
-            </div>
+            @foreach([
+                ['label' => 'Z',  'shop' => $transfer->sourceShop],
+                ['label' => 'Do', 'shop' => $transfer->targetShop],
+            ] as $side)
+                <div>
+                    <flux:subheading>{{ $side['label'] }}</flux:subheading>
 
-            <div>
-                <flux:subheading>Do</flux:subheading>
-                <flux:heading class="mt-1">
-                    {{ $transfer->targetShop?->short_name ?: $transfer->targetShop?->name ?? '—' }}
-                </flux:heading>
-            </div>
+                    @if($side['shop'])
+                        <div class="mt-1 flex items-center gap-2">
+                            <flux:avatar :name="$side['shop']->name" src="{{ $side['shop']->avatar_url }}" size="sm" />
+                            <flux:heading>{{ $side['shop']->short_name ?: $side['shop']->name }}</flux:heading>
+                        </div>
+                    @else
+                        <flux:heading class="mt-1">—</flux:heading>
+                    @endif
+                </div>
+            @endforeach
 
             @foreach([
                 ['label' => 'Utworzył', 'user' => $transfer->creator,  'date' => $transfer->created_at],
@@ -69,7 +73,8 @@
             <flux:modal name="receive" class="min-w-[22rem]">
                 <flux:heading size="lg">Przyjąć transfer?</flux:heading>
                 <flux:text class="mt-2">
-                    {{ $transfer->transfer_items_count }} szt. trafi na magazyn sklepu {{ $transfer->targetShop?->short_name ?: $transfer->targetShop?->name }}.                </flux:text>
+                    {{ $transfer->transfer_items_count }} szt. trafi na magazyn sklepu {{ $transfer->targetShop?->short_name ?: $transfer->targetShop?->name }}.
+                </flux:text>
                 <div class="mt-6 flex justify-end gap-2">
                     <flux:modal.close><flux:button variant="ghost">Wróć</flux:button></flux:modal.close>
                     <flux:button variant="primary" color="green" wire:click="receive">Przyjmij</flux:button>
@@ -81,7 +86,7 @@
             <flux:modal name="cancel" class="min-w-[22rem]">
                 <flux:heading size="lg">Anulować transfer?</flux:heading>
                 <flux:text class="mt-2">
-                    Itemy wrócą na magazyn sklepu {{ $transfer->sourceShop?->name }}.
+                    Itemy wrócą na magazyn sklepu {{ $transfer->sourceShop?->short_name ?: $transfer->sourceShop?->name }}.
                 </flux:text>
                 <div class="mt-6 flex justify-end gap-2">
                     <flux:modal.close><flux:button variant="ghost">Wróć</flux:button></flux:modal.close>
@@ -107,7 +112,7 @@
             <flux:table.column>ID</flux:table.column>
             <flux:table.column>Produkt</flux:table.column>
             <flux:table.column>Stan</flux:table.column>
-            <flux:table.column>Status przemiotu</flux:table.column>
+            <flux:table.column>Status przedmiotu</flux:table.column>
         </flux:table.columns>
 
         <flux:table.rows>

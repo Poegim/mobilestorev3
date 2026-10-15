@@ -157,7 +157,6 @@ class ImportLegacyData extends Command
             'name' => $r['name'],
             'parent_category_id' => $r['parent_category_id'],
             'brand_id' => $r['brand_id'],
-            'gtin' => $r['gtin'],
             'created_at' => now(),
             'updated_at' => now(),
         ]);

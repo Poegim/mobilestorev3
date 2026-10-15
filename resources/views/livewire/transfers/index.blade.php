@@ -50,8 +50,26 @@
                         @endphp
                         <flux:link href="{{ $showRoute }}" wire:navigate>#{{ $transfer->id }}</flux:link>
                     </flux:table.cell>
-                    <flux:table.cell>{{ $transfer->sourceShop?->short_name ?: $transfer->sourceShop?->name ?? '—' }}</flux:table.cell>
-                    <flux:table.cell>{{ $transfer->targetShop?->short_name ?: $transfer->targetShop?->name ?? '—' }}</flux:table.cell>
+                    <flux:table.cell>
+                        @if($transfer->sourceShop)
+                            <div class="flex items-center gap-2">
+                                <flux:avatar :name="$transfer->sourceShop->name" src="{{ $transfer->sourceShop->avatar_url }}" size="sm" />
+                                <span>{{ $transfer->sourceShop->short_name ?: $transfer->sourceShop->name }}</span>
+                            </div>
+                        @else
+                            —
+                        @endif
+                    </flux:table.cell>
+                    <flux:table.cell>
+                        @if($transfer->targetShop)
+                            <div class="flex items-center gap-2">
+                                <flux:avatar :name="$transfer->targetShop->name" src="{{ $transfer->targetShop->avatar_url }}" size="sm" />
+                                <span>{{ $transfer->targetShop->short_name ?: $transfer->targetShop->name }}</span>
+                            </div>
+                        @else
+                            —
+                        @endif
+                    </flux:table.cell>
                     <flux:table.cell>{{ $transfer->transfer_items_count }}</flux:table.cell>
                     <flux:table.cell>
                         <flux:badge size="sm" :color="$transfer->status->color()">
