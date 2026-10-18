@@ -17,6 +17,8 @@ use Livewire\Attributes\Computed;
 use Livewire\Component;
 use App\Reports\Dashboard\AccessoryMarginReport;
 use Illuminate\Support\Collection;
+use Carbon\CarbonImmutable;
+use Illuminate\Support\Str;
 
 class Dashboard extends Component
 {
@@ -42,13 +44,17 @@ class Dashboard extends Component
     public array $monthCategories = [];
     public array $shopStats       = [];
 
+    public string $month = '';
+
     /** Per-request scope memo (not persisted across requests). */
     protected ?DashboardScope $scopeCache = null;
 
     #[Computed]
     public function periodLabel(): string
     {
-        return $this->period->label();
+        $month = $this->selectedMonth();
+
+        return $month ? $this->months()[$month] : $this->period->label();
     }
     
 
@@ -88,7 +94,8 @@ class Dashboard extends Component
     {
         $report = new RevenueReport($this->scope(), app(CategoryTree::class), $this->isAdmin());
 
-        $period = $report->forPeriod($this->period);
+        [$from, $to] = $this->activeRange();
+        $period = $report->forRange($from, $to);
         $this->todayRevenue    = $period['revenue'];
         $this->todaySells      = $period['sells'];
         $this->todayCategories = $period['categories'];
@@ -111,23 +118,43 @@ class Dashboard extends Component
 
         $report = new ShopStatsReport($this->scope(), app(CategoryTree::class));
 
-        $this->shopStats = $report->forPeriod(
-            $this->period,
+        [$from, $to] = $this->activeRange();
+
+        $this->shopStats = $report->forRange(
+            $from,
+            $to,
             $this->shop,
             auth()->user(),
             $this->shopAccessoryMargins,
         );
+
         $this->shopStatsLoaded = true;
     }
-
-    
 
     public function loadTopProducts(): void
     {
         $this->topProductsLoaded = true;
     }
 
-    public function updatedPeriod(): void
+    public function selectPeriod(string $value): void
+    {
+        $period = DashboardPeriod::tryFrom($value);
+
+        if ($period === null) {
+            return;
+        }
+
+        $this->period = $period;
+        $this->month  = ''; // a period button overrides the month select
+        $this->reloadModules();
+    }
+
+    public function updatedMonth(): void
+    {
+        $this->reloadModules();
+    }
+
+    private function reloadModules(): void
     {
         $reloadRevenue = $this->revenueLoaded;
         $reloadShop    = $this->shopStatsLoaded;
@@ -150,7 +177,8 @@ class Dashboard extends Component
                 ])
             )->count(),
             'isAdmin'        => $this->isAdmin(),
-            'period'         => $this->period->value, // keep the view's string contract intact
+            'period' => $this->selectedMonth() ? null : $this->period->value, // null = no button highlighted
+            'months' => $this->months(),
         ]);
     }
 
@@ -163,4 +191,37 @@ class Dashboard extends Component
     {
         return auth()->user()->isAdmin();
     }
+
+    /** Valid selected month (1..current month) or null. */
+    private function selectedMonth(): ?int
+    {
+        $month = (int) $this->month;
+
+        return $month >= 1 && $month <= now()->month ? $month : null;
+    }
+
+    /** @return array{0: CarbonImmutable, 1: CarbonImmutable} */
+    private function activeRange(): array
+    {
+        $month = $this->selectedMonth();
+
+        if ($month === null) {
+            return $this->period->range();
+        }
+
+        $start = CarbonImmutable::create(now()->year, $month, 1)->startOfMonth();
+
+        return [$start, $start->endOfMonth()];
+    }
+
+    /** @return array<int, string> month number => "Marzec 2026", January up to the current month */
+    private function months(): array
+    {
+        return collect(range(1, now()->month))
+            ->mapWithKeys(fn (int $m) => [
+                $m => Str::ucfirst(CarbonImmutable::create(now()->year, $m, 1)->translatedFormat('F Y')),
+            ])
+            ->all();
+    }
+
 }

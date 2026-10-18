@@ -22,6 +22,7 @@
             'yesterday'   => 'Wczoraj',
             'week'        => 'Tydzień',
             'month'       => 'Miesiąc',
+            'lastmonth'   => 'Poprzedni miesiąc',
             'last30'      => '30 dni',
             'last60'      => '60 dni',
             'last90'      => '90 dni',
@@ -29,7 +30,7 @@
             'lastquarter' => 'Poprz. kwartał',
         ] as $value => $label)
             <button
-                wire:click="$set('period', '{{ $value }}')"
+                wire:click="selectPeriod('{{ $value }}')"
                 @class([
                     'cursor-pointer px-3 py-1.5 rounded-lg text-sm font-medium transition-colors duration-150',
                     'bg-indigo-600 text-white shadow-sm' => $activePeriod === $value,
@@ -39,10 +40,16 @@
                 {{ $label }}
             </button>
         @endforeach
+        <flux:select wire:model.live="month" size="sm" class="w-44">
+            <flux:select.option value="">Wybierz miesiąc…</flux:select.option>
+            @foreach($months as $number => $name)
+                <flux:select.option :value="$number">{{ $name }}</flux:select.option>
+            @endforeach
+        </flux:select>
         <flux:icon
             name="arrow-path"
             wire:loading
-            wire:target="period"
+            wire:target="selectPeriod,month"
             class="size-4 text-indigo-400 animate-spin"
         />
     </div>
@@ -101,7 +108,7 @@
             class="absolute inset-0 z-10 rounded-xl bg-zinc-950/40 backdrop-blur-[2px] flex items-center justify-center"
         >
             <div class="flex items-center gap-2 bg-zinc-800 text-zinc-100 px-4 py-2.5 rounded-full text-sm shadow-xl">
-                <flux:icon name="arrow-path" class="size-4 animate-spin text-indigo-400" />
+                <flux:icon name="arrow-path" class="size-4 animate-spin text-indigo-400" wire:target="selectPeriod,month"/>
                 Ładowanie danych…
             </div>
         </div>

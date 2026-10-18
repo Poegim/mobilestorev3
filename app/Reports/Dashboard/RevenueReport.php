@@ -21,8 +21,19 @@ class RevenueReport
     /** @return array{revenue: int, sells: int, categories: array} */
     public function forPeriod(DashboardPeriod $period): array
     {
+        // Delegate to the range-based method so both entry points share one code path
         [$from, $to] = $period->range();
 
+        return $this->forRange($from, $to);
+    }
+
+    /**
+     * Same summary for an arbitrary date range (e.g. a specific month picked in the select).
+     *
+     * @return array{revenue: int, sells: int, categories: array}
+     */
+    public function forRange(CarbonInterface $from, CarbonInterface $to): array
+    {
         return [
             'revenue'    => (int) $this->soldItems($from, $to)->sum('sells_items.price'),
             'sells'      => $this->scope->apply(

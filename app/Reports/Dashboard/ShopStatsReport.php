@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Support\CategoryTree;
 use App\Support\Dashboard\DashboardScope;
 use Illuminate\Support\Collection;
+use Carbon\CarbonInterface;
 
 class ShopStatsReport
 {
@@ -20,15 +21,16 @@ class ShopStatsReport
         private readonly CategoryTree $categories,
     ) {}
 
-    /**
-     * Per-shop stats for the period, ranked by transaction count.
-     *
-     * @param  array<int, array{current: ?int, previous: ?int}>  $margins  optional accessory margins per shop id
-     * @return array<int, array<string, mixed>>
-     */
     public function forPeriod(DashboardPeriod $period, ?Shop $shop, User $user, array $margins = []): array
     {
-        $stats = $this->rawStats($period, $shop, $user);
+        [$from, $to] = $period->range();
+
+        return $this->forRange($from, $to, $shop, $user, $margins);
+    }
+
+    public function forRange(CarbonInterface $from, CarbonInterface $to, ?Shop $shop, User $user, array $margins = []): array
+    {
+        $stats = $this->rawStats($from, $to, $shop, $user);
         $maxTx = $stats->max(fn ($s) => $s['transactions']) ?: 1;
 
         return $stats
@@ -52,10 +54,8 @@ class ShopStatsReport
             ->all();
     }
 
-    private function rawStats(DashboardPeriod $period, ?Shop $shop, User $user): Collection
+    private function rawStats(CarbonInterface $from, CarbonInterface $to, ?Shop $shop, User $user): Collection
     {
-        [$from, $to] = $period->range();
-
         $devices     = $this->categories->descendantIds(config('dashboard.category_roots.devices'));
         $accessories = $this->categories->descendantIds(config('dashboard.category_roots.accessories'));
 

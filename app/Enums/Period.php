@@ -34,7 +34,7 @@ enum Period: string
             self::Yesterday => [Carbon::yesterday()->startOfDay(), Carbon::yesterday()->endOfDay()],
             self::ThisWeek  => [Carbon::now()->startOfWeek(), now()],
             self::ThisMonth => [Carbon::now()->startOfMonth(), now()],
-            self::LastMonth => [Carbon::now()->subMonth()->startOfMonth(), Carbon::now()->subMonth()->endOfMonth()],
+            self::LastMonth => [Carbon::now()->startOfMonth()->subMonth(), Carbon::now()->startOfMonth()->subMonth()->endOfMonth(),],
             self::ThisYear  => [Carbon::now()->startOfYear(), now()],
             self::All       => null,
         };

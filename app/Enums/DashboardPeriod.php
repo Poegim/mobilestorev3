@@ -10,6 +10,7 @@ enum DashboardPeriod: string
     case Yesterday   = 'yesterday';
     case Week        = 'week';
     case Month       = 'month';
+    case LastMonth   = 'lastmonth';
     case Last30      = 'last30';
     case Last60      = 'last60';
     case Last90      = 'last90';
@@ -25,6 +26,7 @@ enum DashboardPeriod: string
             self::Yesterday   => 'Wczoraj',
             self::Week        => 'Ten tydzień',
             self::Month       => 'Ten miesiąc',
+            self::LastMonth   => 'Poprzedni miesiąc',
             self::Last30      => 'Ostatnie 30 dni',
             self::Last60      => 'Ostatnie 60 dni',
             self::Last90      => 'Ostatnie 90 dni',
@@ -49,11 +51,17 @@ enum DashboardPeriod: string
             self::Yesterday   => [$now->subDay()->startOfDay(),         $now->subDay()->endOfDay()],
             self::Week        => [$now->startOfWeek(),                  $now->endOfWeek()],
             self::Month       => [$now->startOfMonth(),                 $now->endOfMonth()],
-            self::Last30      => [$now->subDays(30)->startOfDay(),      $now->endOfDay()],
-            self::Last60      => [$now->subDays(60)->startOfDay(),      $now->endOfDay()],
-            self::Last90      => [$now->subDays(90)->startOfDay(),      $now->endOfDay()],
+            self::LastMonth => [$now->startOfMonth()->subMonth(),       $now->startOfMonth()->subMonth()->endOfMonth(),],
+            // self::LastMonth   => [$now->subMonth()->startOfMonth(),     $now->subMonth()->endOfMonth()],
+            // self::Last30      => [$now->subDays(30)->startOfDay(),      $now->endOfDay()],
+            // self::Last60      => [$now->subDays(60)->startOfDay(),      $now->endOfDay()],
+            // self::Last90      => [$now->subDays(90)->startOfDay(),      $now->endOfDay()],
+            self::Last30      => [$now->subDays(29)->startOfDay(), $now->endOfDay()],
+            self::Last60      => [$now->subDays(59)->startOfDay(), $now->endOfDay()],
+            self::Last90      => [$now->subDays(89)->startOfDay(), $now->endOfDay()],
             self::Quarter     => [$now->startOfQuarter(),               $now->endOfQuarter()],
-            self::LastQuarter => [$now->subQuarter()->startOfQuarter(), $now->subQuarter()->endOfQuarter()],
+            // self::LastQuarter => [$now->subQuarter()->startOfQuarter(), $now->subQuarter()->endOfQuarter()],
+            self::LastQuarter => [$now->subQuartersNoOverflow(1)->startOfQuarter(), $now->subQuartersNoOverflow(1)->endOfQuarter(),],
             self::Year        => [$now->startOfYear(),                  $now->endOfYear()],
             self::LastYear    => [$now->subYear()->startOfYear(),       $now->subYear()->endOfYear()],
         };
