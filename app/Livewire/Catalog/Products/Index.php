@@ -47,7 +47,7 @@ class Index extends Component
             };
 
         $query = $query
-        ->with(['brand', 'devices', 'creator'])
+        ->with(['brand', 'devices', 'creator', 'updater', 'category'])
         ->leftJoin('brands', 'products.brand_id', '=', 'brands.id')
         ->select('products.*');
 

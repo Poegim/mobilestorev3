@@ -9,9 +9,7 @@
         </div>
     </div>
 
-    
     <div class="mb-4 flex flex-wrap gap-2 items-center">
-
         <div class="flex-1 min-w-56">
             <flux:input
                 wire:model.live.debounce.300ms="search"
@@ -20,6 +18,12 @@
                 clearable
             />
         </div>
+
+        <flux:select wire:model.live="catalog" class="w-48">
+            <option value="current">Nowe produkty</option>
+            <option value="legacy">Legacy</option>
+            <option value="all">Wszystkie</option>
+        </flux:select>
 
         <flux:select wire:model.live="brandFilter" class="w-48">
             <option value="">Wszystkie marki</option>
@@ -33,12 +37,6 @@
             <option value="50">50</option>
             <option value="100">100</option>
         </flux:select>
-
-        <flux:select wire:model.live="catalog" class="w-48">
-            <option value="current">Nowe produkty</option>
-            <option value="legacy">Legacy</option>
-            <option value="all">Wszystkie</option>
-        </flux:select>
     </div>
 
     <flux:table :paginate="$products">
@@ -47,8 +45,12 @@
             <flux:table.column>Marka</flux:table.column>
             <flux:table.column>Nazwa</flux:table.column>
             <flux:table.column>Kompatybilność</flux:table.column>
-            <flux:table.column>Dodał</flux:table.column>
-            <flux:table.column>Data</flux:table.column>
+            <flux:table.column>Kategoria</flux:table.column>
+            <flux:table.column>Utworzył</flux:table.column>
+            <flux:table.column>Utworzono</flux:table.column>
+            <flux:table.column>Zmienił</flux:table.column>
+            <flux:table.column>Zmieniono</flux:table.column>
+            <flux:table.column></flux:table.column>
         </flux:table.columns>
 
         <flux:table.rows>
@@ -68,12 +70,44 @@
                             <span class="text-zinc-400 text-xs">Uniwersalny</span>
                         @endif
                     </flux:table.cell>
-                    <flux:table.cell class="text-zinc-500 text-sm">{{ $product->creator?->login ?? '—' }}</flux:table.cell>
-                    <flux:table.cell class="text-zinc-500 text-sm tabular-nums">{{ $product->created_at?->format('d.m.Y') ?? '—' }}</flux:table.cell>
+                    <flux:table.cell>
+                        @if($product->category)
+                            <span class="text-sm text-zinc-500">{{ $product->category->name }}</span>
+                        @else
+                            <span class="text-zinc-400">—</span>
+                        @endif
+                    </flux:table.cell>
+                    <flux:table.cell>
+                        @if($product->creator)
+                            <div class="flex items-center gap-2">
+                                <flux:avatar :name="$product->creator->login" size="xs" />
+                                <span class="text-sm text-zinc-500">{{ $product->creator->login }}</span>
+                            </div>
+                        @else
+                            <span class="text-zinc-400">—</span>
+                        @endif
+                    </flux:table.cell>
+                    <flux:table.cell class="text-zinc-500 text-sm tabular-nums">{{ $product->created_at?->format('d.m.Y H:i') ?? '—' }}</flux:table.cell>
+                    <flux:table.cell>
+                        @if($product->updater)
+                            <div class="flex items-center gap-2">
+                                <flux:avatar :name="$product->updater->login" size="xs" />
+                                <span class="text-sm text-zinc-500">{{ $product->updater->login }}</span>
+                            </div>
+                        @else
+                            <span class="text-zinc-400">—</span>
+                        @endif
+                    </flux:table.cell>
+                    <flux:table.cell class="text-zinc-500 text-sm tabular-nums">{{ $product->updated_at?->format('d.m.Y H:i') ?? '—' }}</flux:table.cell>
+                    <flux:table.cell class="text-right">
+                        @if(!$product->is_legacy)
+                            <flux:button size="sm" variant="ghost" icon="pencil" href="#" title="Edytuj" />
+                        @endif
+                    </flux:table.cell>
                 </flux:table.row>
             @empty
                 <flux:table.row>
-                    <flux:table.cell colspan="6" class="text-center text-zinc-500">
+                    <flux:table.cell colspan="9" class="text-center text-zinc-500">
                         Brak produktów w katalogu
                     </flux:table.cell>
                 </flux:table.row>

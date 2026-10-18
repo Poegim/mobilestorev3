@@ -35,7 +35,7 @@
 
         {{-- Category --}}
         <flux:select wire:model="categoryId" label="Kategoria">
-            <option value="">Bez kategorii</option>
+            <option value="">Wybierz kategorię...</option>
             @foreach($this->categories as $cat)
                 <option value="{{ $cat->id }}">{{ $cat->name }}</option>
             @endforeach

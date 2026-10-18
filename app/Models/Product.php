@@ -7,7 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 class Product extends Model
 {
     
-    protected $fillable = ['name', 'parent_category_id', 'brand_id', 'gtin'];
+    protected $fillable = [
+        'name', 'parent_category_id', 'brand_id', 'gtin',
+        'is_legacy', 'created_by', 'updated_by',
+    ];
 
     public function category()
     {
@@ -37,6 +40,11 @@ class Product extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function updater()
+    {
+        return $this->belongsTo(User::class, 'updated_by');
     }
 
     public function scopeCurrent($query)

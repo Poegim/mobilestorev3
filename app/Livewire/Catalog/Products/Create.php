@@ -59,7 +59,7 @@ class Create extends Component
             ->select('devices.*')
             ->orderBy('brands.name')
             ->orderBy('devices.model')
-            ->limit(10)
+            ->limit(30)
             ->get();
     }
 
@@ -120,8 +120,10 @@ class Create extends Component
     {
         $this->validate([
             'name' => 'required|string|max:255',
+            'categoryId' => 'required|integer|exists:categories,id',
         ], [
             'name.required' => 'Wpisz nazwę produktu.',
+            'categoryId.required' => 'Wybierz kategorię.',
         ]);
 
         // Check for duplicate: same brand + name + exact same devices
@@ -146,6 +148,7 @@ class Create extends Component
             'parent_category_id' => $this->categoryId ?? 0,
             'is_legacy' => false,
             'created_by' => auth()->id(),
+            'updated_by' => auth()->id(),
         ]);
 
         if (!empty($selectedIds)) {
