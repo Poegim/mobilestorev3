@@ -1,7 +1,12 @@
 <div>
     <div class="mb-6 flex items-center justify-between">
         <flux:heading size="xl">Katalog produktów</flux:heading>
-        <flux:badge size="lg">{{ $products->total() }} produktów</flux:badge>
+        <div class="flex items-center gap-3">
+            <flux:badge size="lg">{{ $products->total() }} produktów</flux:badge>
+            <flux:button variant="primary" icon="plus" size="sm" :href="route('catalog.products.create')" wire:navigate>
+                Nowy produkt
+            </flux:button>
+        </div>
     </div>
 
     

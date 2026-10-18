@@ -14,10 +14,10 @@ use App\Livewire\Admin\Users\Show as AdminUsersShow;
 use App\Livewire\Shops\Index as ShopsIndex;
 use Illuminate\Support\Facades\Route;
 use App\Livewire\Catalog\Products\Index as CatalogProductsIndex;
+use App\Livewire\Catalog\Products\Create as CatalogProductsCreate;
 use App\Livewire\Catalog\Devices\Index as CatalogDevicesIndex;
 use App\Livewire\Catalog\Brands\Index as CatalogBrandsIndex;
 use App\Livewire\Contacts\Index as ContactsIndex;
-
 
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -30,6 +30,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('transfers', TransfersIndex::class)->name('transfers.index');
     Route::get('transfers/{transfer}', TransfersShow::class)->name('transfers.show');
     Route::get('catalog/products', CatalogProductsIndex::class)->name('catalog.products.index');
+    Route::get('catalog/products/create', CatalogProductsCreate::class)->name('catalog.products.create');
     Route::get('catalog/devices', CatalogDevicesIndex::class)->name('catalog.devices.index');
     Route::get('catalog/brands', CatalogBrandsIndex::class)->name('catalog.brands.index');
     Route::get('contacts', ContactsIndex::class)->name('contacts.index');
