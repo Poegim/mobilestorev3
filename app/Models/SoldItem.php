@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ItemStatus;
+use App\Models\Service;
 use Illuminate\Database\Eloquent\Model;
 
 class SoldItem extends Model
@@ -25,6 +26,11 @@ class SoldItem extends Model
     public function item()
     {
         return $this->belongsTo(Item::class);
+    }
+
+    public function service()
+    {
+        return $this->belongsTo(Service::class);
     }
 
     public function tax()

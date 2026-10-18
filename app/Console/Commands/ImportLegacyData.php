@@ -42,6 +42,7 @@ class ImportLegacyData extends Command
         $this->importUsers();
         $this->importUsersShops();
         $this->importItems();
+        $this->importServices();
         $this->importProductPrices();
         $this->importPurchases();
         $this->importPurchasesItems();
@@ -390,6 +391,19 @@ class ImportLegacyData extends Command
             'id' => $r['id'],
             'transfer_id' => $r['transfer_id'],
             'item_id' => $r['item_id'],
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
+    private function importServices(): void
+    {
+        $this->importChunked('Services', 'services', 'services', fn ($r) => [
+            'id' => $r['id'],
+            'name' => $r['name'],
+            'tax_id' => $r['tax_id'],
+            'price' => $r['price'],
+            'internal_cost' => $r['internal_cost'],
             'created_at' => now(),
             'updated_at' => now(),
         ]);

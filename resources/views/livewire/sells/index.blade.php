@@ -195,7 +195,7 @@
                                         @endif
 
                                     @elseif($si->service_id)
-                                        <span class="italic text-zinc-400">Usługa #{{ $si->service_id }}</span>
+                                        <span class="italic text-zinc-400">{{ $si->service?->name ?? "Usługa #{$si->service_id}" }}</span>
                                     @endif
                                 </span>
 

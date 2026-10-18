@@ -266,7 +266,7 @@ class Index extends Component
     public function render()
     {
         $query = Sell::query()
-            ->with(['shop', 'soldItems' => fn ($q) => $q->where('valid', 1), 'soldItems.item.product.brand'])
+            ->with(['shop', 'soldItems' => fn ($q) => $q->where('valid', 1), 'soldItems.item.product.brand', 'soldItems.service'])
             ->selectRaw('sells.*,
                 (SELECT COUNT(*) FROM sells_items WHERE sells_items.sell_id = sells.id AND sells_items.valid = 1) as items_count,
                 (SELECT COALESCE(SUM(price), 0) FROM sells_items WHERE sells_items.sell_id = sells.id AND sells_items.valid = 1) as total_price
