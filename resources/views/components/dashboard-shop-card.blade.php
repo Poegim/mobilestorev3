@@ -103,10 +103,12 @@
             <div class="text-xs text-zinc-300 dark:text-zinc-600">Brak sprzedaży</div>
         @endif
 
-        {{-- Accessory margin — always rendered; shows "brak danych" when current is null --}}
-        {{-- Accessory margin — current vs previous month; each side shown independently --}}
+        {{-- Accessory margin — previous vs current CALENDAR month, independent of the period switcher --}}
         <div class="flex items-center justify-between text-xs pt-1.5 border-t border-zinc-100 dark:border-zinc-800">
-            <span class="text-zinc-400 dark:text-zinc-500">Marża akc.</span>
+            <span
+                class="text-zinc-400 dark:text-zinc-500"
+                title="Marża na akcesoriach: poprzedni miesiąc kalendarzowy → bieżący miesiąc kalendarzowy. Nie zależy od wybranego okresu."
+            >Marża akc. (poprz. → bież. mies.)</span>
             <div class="flex items-center gap-1.5 tabular-nums">
                 @if($hasPrevious)
                     <span class="text-zinc-400 dark:text-zinc-500">{{ number_format($accessoryMarginPctPrevious, 2, ',', ' ') }}%</span>

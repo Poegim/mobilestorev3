@@ -11,11 +11,8 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Accessory margin % per shop, current vs previous month.
- *
- * NOTE: not wired into the dashboard by default (the original call site was
- * commented out). Kept isolated so it can be enabled without bloating the
- * Livewire component. Delete this file if the feature is dropped.
- */
+*/
+
 class AccessoryMarginReport
 {
     public function __construct(private readonly CategoryTree $categories) {}
@@ -30,8 +27,10 @@ class AccessoryMarginReport
 
             $currentFrom  = CarbonImmutable::now()->startOfMonth();
             $currentTo    = CarbonImmutable::now()->endOfMonth();
-            $previousFrom = CarbonImmutable::now()->subMonth()->startOfMonth();
-            $previousTo   = CarbonImmutable::now()->subMonth()->endOfMonth();
+            // $previousFrom = CarbonImmutable::now()->subMonth()->startOfMonth();
+            $previousFrom = CarbonImmutable::now()->startOfMonth()->subMonth();
+            // $previousTo   = CarbonImmutable::now()->subMonth()->endOfMonth();
+            $previousTo   = CarbonImmutable::now()->startOfMonth()->subMonth()->endOfMonth();
 
             $margins = [];
 
