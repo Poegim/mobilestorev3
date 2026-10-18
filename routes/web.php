@@ -13,6 +13,7 @@ use App\Livewire\Admin\Users\Index as AdminUsersIndex;
 use App\Livewire\Admin\Users\Show as AdminUsersShow;
 use App\Livewire\Shops\Index as ShopsIndex;
 use Illuminate\Support\Facades\Route;
+use App\Livewire\Catalog\Products\Index as CatalogProductsIndex;
 use App\Livewire\Catalog\Devices\Index as CatalogDevicesIndex;
 use App\Livewire\Catalog\Brands\Index as CatalogBrandsIndex;
 use App\Livewire\Contacts\Index as ContactsIndex;
