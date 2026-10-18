@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('name', 255);
             $table->unsignedInteger('parent_category_id');
             $table->unsignedInteger('brand_id');
-            $table->string('gtin', 64)->nullable();
+            $table->string('gtin', 14)->nullable()->unique();
 
             $table->index('parent_category_id');
             $table->index('brand_id');
