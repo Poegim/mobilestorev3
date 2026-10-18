@@ -160,6 +160,7 @@ class ImportLegacyData extends Command
             'brand_id' => $r['brand_id'],
             'created_at' => now(),
             'updated_at' => now(),
+            'is_legacy' => true,
         ]);
     }
 

@@ -58,6 +58,25 @@
                 >
                     Transfery
                 </x-sidebar-item-with-new>
+
+                <flux:sidebar.item icon="user-group" :href="route('contacts.index')" :current="request()->routeIs('contacts.*')" wire:navigate>
+                    Kontakty
+                </flux:sidebar.item>
+
+                <flux:sidebar.group heading="Katalog" expandable :expanded="request()->routeIs('catalog.*')">
+                    <flux:sidebar.item icon="cube" :href="route('catalog.products.index')" :current="request()->routeIs('catalog.products.*')" wire:navigate>
+                        Produkty
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="device-phone-mobile" :href="route('catalog.devices.index')" :current="request()->routeIs('catalog.devices.*')" wire:navigate>
+                        Urządzenia
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="tag" :href="route('catalog.brands.index')" :current="request()->routeIs('catalog.brands.*')" wire:navigate>
+                        Marki
+                    </flux:sidebar.item>
+                </flux:sidebar.group>
+
+                <flux:separator />
+
                 {{-- Admin-only: user management --}}
                 @if(auth()->user()?->isAdmin())
                     <flux:sidebar.item icon="users" :href="route('admin.users.index')" :current="request()->routeIs('admin.users.*')" wire:navigate>
