@@ -66,6 +66,7 @@ class Index extends Component
         }
 
         $products = $query
+            ->orderBy('id', 'desc')
             ->orderBy('brands.name')
             ->orderBy('products.name')
             ->paginate($this->perPage);

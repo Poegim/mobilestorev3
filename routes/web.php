@@ -15,6 +15,7 @@ use App\Livewire\Shops\Index as ShopsIndex;
 use Illuminate\Support\Facades\Route;
 use App\Livewire\Catalog\Products\Index as CatalogProductsIndex;
 use App\Livewire\Catalog\Products\Create as CatalogProductsCreate;
+use App\Livewire\Catalog\Products\Edit as CatalogProductsEdit;
 use App\Livewire\Catalog\Devices\Index as CatalogDevicesIndex;
 use App\Livewire\Catalog\Brands\Index as CatalogBrandsIndex;
 use App\Livewire\Contacts\Index as ContactsIndex;
@@ -23,24 +24,37 @@ use App\Livewire\Contacts\Index as ContactsIndex;
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/', Dashboard::class)->name('dashboard');
     Route::get('items', ItemsIndex::class)->name('items.index');
+    
     Route::get('sells', SellsIndex::class)->name('sells.index');
     Route::get('sells/{sell}', SellsShow::class)->name('sells.show');
+    
     Route::get('purchases', PurchasesIndex::class)->name('purchases.index');
+    
     Route::get('shops', ShopsIndex::class)->name('shops.index');
+
     Route::get('transfers', TransfersIndex::class)->name('transfers.index');
     Route::get('transfers/{transfer}', TransfersShow::class)->name('transfers.show');
+
     Route::get('catalog/products', CatalogProductsIndex::class)->name('catalog.products.index');
     Route::get('catalog/products/create', CatalogProductsCreate::class)->name('catalog.products.create');
+    Route::get('catalog/products/{product}/edit', CatalogProductsEdit::class)->name('catalog.products.edit');
+    
     Route::get('catalog/devices', CatalogDevicesIndex::class)->name('catalog.devices.index');
+    
     Route::get('catalog/brands', CatalogBrandsIndex::class)->name('catalog.brands.index');
+    
     Route::get('contacts', ContactsIndex::class)->name('contacts.index');
 
     Route::prefix('shop/{shop}')->name('shop.')->scopeBindings()->group(function () {
         Route::get('dashboard', Dashboard::class)->name('dashboard');
+
         Route::get('items', ItemsIndex::class)->name('items.index');
+
         Route::get('sells', SellsIndex::class)->name('sells.index');
         Route::get('sells/{sell}', SellsShow::class)->name('sells.show');
+
         Route::get('purchases', PurchasesIndex::class)->name('purchases.index');
+
         Route::get('transfers', TransfersIndex::class)->name('transfers.index');
         Route::get('transfers/create', TransfersCreate::class)->name('transfers.create');
         Route::get('transfers/{transfer}', TransfersShow::class)->name('transfers.show');

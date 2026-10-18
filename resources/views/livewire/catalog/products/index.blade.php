@@ -100,8 +100,8 @@
                     </flux:table.cell>
                     <flux:table.cell class="text-zinc-500 text-sm tabular-nums">{{ $product->updated_at?->format('d.m.Y H:i') ?? '—' }}</flux:table.cell>
                     <flux:table.cell class="text-right">
-                        @if(!$product->is_legacy)
-                            <flux:button size="sm" variant="ghost" icon="pencil" href="#" title="Edytuj" />
+                        @if(!$product->is_legacy || auth()->user()->isAdmin())
+                            <flux:button size="sm" variant="ghost" icon="pencil" :href="route('catalog.products.edit', $product)" wire:navigate title="Edytuj" />
                         @endif
                     </flux:table.cell>
                 </flux:table.row>
