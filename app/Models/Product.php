@@ -28,4 +28,43 @@ class Product extends Model
     {
         return $this->hasMany(ProductPrice::class);
     }
+
+    public function devices()
+    {
+        return $this->belongsToMany(Device::class, 'product_device');
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function scopeCurrent($query)
+    {
+        return $query->where('is_legacy', false);
+    }
+
+    public function scopeLegacy($query)
+    {
+        return $query->where('is_legacy', true);
+    }
+
+    /** e.g. "3mk Flexible Glass iPhone 15/iPhone 16" */
+    public function getDisplayNameAttribute(): string
+    {
+        $parts = [];
+
+        if ($this->brand) {
+            $parts[] = $this->brand->name;
+        }
+
+        $parts[] = $this->name;
+
+        $deviceNames = $this->devices->pluck('model')->join('/');
+        if ($deviceNames) {
+            $parts[] = $deviceNames;
+        }
+
+        return implode(' ', $parts);
+    }
 }
