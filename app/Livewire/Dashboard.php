@@ -108,28 +108,41 @@ class Dashboard extends Component
         $this->revenueLoaded = true;
     }
 
-    public function loadShopStats(): void
-    {
-        // Margins depend only on calendar month, not the period — compute once.
-        if ($this->shopAccessoryMargins === []) {
-            $this->shopAccessoryMargins = app(AccessoryMarginReport::class)
-                ->forShops($this->dashboardShops());
+        public function loadShopStats(): void
+        {
+            // Margins depend only on calendar month, not the period — compute once.
+            if ($this->shopAccessoryMargins === []) {
+                $this->shopAccessoryMargins = app(AccessoryMarginReport::class)
+                    ->forShops($this->dashboardShops());
+            }
+
+            $report = new ShopStatsReport(
+                $this->scope(),
+                app(CategoryTree::class),
+                $this->isAdmin(),
+            );
+
+            [$from, $to] = $this->activeRange();
+
+            $this->shopStats = $report->forRange(
+                $from,
+                $to,
+                $this->shop,
+                auth()->user(),
+                $this->shopAccessoryMargins,
+            );
+
+            logger('shopStats debug', [
+            'first_shop'         => $this->shopStats[0]['shopName'] ?? 'empty',
+            'revenue'            => $this->shopStats[0]['revenue'] ?? 'missing',
+            'devicesRevenue'     => $this->shopStats[0]['devicesRevenue'] ?? 'missing',
+            'accessoriesRevenue' => $this->shopStats[0]['accessoriesRevenue'] ?? 'missing',
+            'servicesRevenue'    => $this->shopStats[0]['servicesRevenue'] ?? 'missing',
+            'devices_count'      => $this->shopStats[0]['devices'] ?? 'missing',
+        ]);
+
+            $this->shopStatsLoaded = true;
         }
-
-        $report = new ShopStatsReport($this->scope(), app(CategoryTree::class));
-
-        [$from, $to] = $this->activeRange();
-
-        $this->shopStats = $report->forRange(
-            $from,
-            $to,
-            $this->shop,
-            auth()->user(),
-            $this->shopAccessoryMargins,
-        );
-
-        $this->shopStatsLoaded = true;
-    }
 
     public function loadTopProducts(): void
     {

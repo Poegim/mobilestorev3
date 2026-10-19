@@ -7,18 +7,63 @@
     'maxTransactions'            => 0,
     'transactions'               => 0,
     'devices'                    => 0,
+    'devicesRevenue'             => 0,
+    'devicesProfit'              => null,
     'accessories'                => 0,
+    'accessoriesRevenue'         => 0,
+    'accessoriesProfit'          => null,
     'services'                   => 0,
+    'servicesRevenue'            => 0,
+    'servicesProfit'             => null,
     'accessoryMarginPctCurrent'  => null,
     'accessoryMarginPctPrevious' => null,
 ])
 
 @php
     $total       = $devices + $accessories + $services;
-    $pctDevices  = $total > 0 ? round(($devices / $total) * 100, 1) : 0;
-    $pctAccess   = $total > 0 ? round(($accessories / $total) * 100, 1) : 0;
-    $pctServices = $total > 0 ? 100 - $pctDevices - $pctAccess : 0;
 
+    // Revenue-based percentages — consistent with per-shop dashboard view.
+    $catRevenue  = $devicesRevenue + $accessoriesRevenue + $servicesRevenue;
+    $pctDevices  = $catRevenue > 0 ? round(($devicesRevenue / $catRevenue) * 100, 1) : 0;
+    $pctAccess   = $catRevenue > 0 ? round(($accessoriesRevenue / $catRevenue) * 100, 1) : 0;
+    $pctServices = $catRevenue > 0 ? 100 - $pctDevices - $pctAccess : 0;
+    
+    $categories = [
+        [
+            'label'   => 'Urządzenia',
+            'abbr'    => 'Urz.',
+            'count'   => $devices,
+            'revenue' => $devicesRevenue,
+            'profit'  => $devicesProfit,
+            'pct'     => $pctDevices,
+            'color'   => 'bg-blue-400 dark:bg-blue-500',
+            'dot'     => 'bg-blue-400 dark:bg-blue-500',
+        ],
+        [
+            'label'   => 'Akcesoria',
+            'abbr'    => 'Akc.',
+            'count'   => $accessories,
+            'revenue' => $accessoriesRevenue,
+            'profit'  => $accessoriesProfit,
+            'pct'     => $pctAccess,
+            'color'   => 'bg-emerald-400 dark:bg-emerald-500',
+            'dot'     => 'bg-emerald-400 dark:bg-emerald-500',
+        ],
+        [
+            'label'   => 'Usługi',
+            'abbr'    => 'Usł.',
+            'count'   => $services,
+            'revenue' => $servicesRevenue,
+            'profit'  => $servicesProfit,
+            'pct'     => $pctServices,
+            'color'   => 'bg-amber-400 dark:bg-amber-500',
+            'dot'     => 'bg-amber-400 dark:bg-amber-500',
+        ],
+    ];
+    
+    // Total profit for percentage calculation (admin only).
+    $totalProfit = collect($categories)->sum('profit');
+    
     // Accessory margin display state.
     $hasCurrent  = $accessoryMarginPctCurrent !== null;
     $hasPrevious = $accessoryMarginPctPrevious !== null;
@@ -29,12 +74,12 @@
     class="rounded-lg border border-zinc-200 dark:border-zinc-700 px-4 py-3 border-l-[4px] flex gap-4"
     style="border-left-color: {{ $shopColor }}; background: color-mix(in oklch, {{ $shopColor }} 4%, transparent);"
 >
-    {{-- Column 1: avatar ONLY --}}
+    {{-- Column 1: avatar --}}
     <div class="shrink-0 flex items-center">
         <flux:avatar name="{{ $shopName }}" size="xl" />
     </div>
 
-    {{-- Column 2: ALL text --}}
+    {{-- Column 2: all text --}}
     <div class="flex-1 min-w-0 flex flex-col justify-between gap-2">
 
         {{-- Row: name + revenue --}}
@@ -54,81 +99,83 @@
             </span>
         </div>
 
-        {{-- Sales count (transactions) + total items sold --}}
+        {{-- Sales count --}}
         <div class="text-xs tabular-nums text-zinc-500 dark:text-zinc-400">
             {{ $transactions }} {{ $transactions === 1 ? 'sprzedaż' : 'sprzedaży' }}
             <span class="text-zinc-300 dark:text-zinc-600">·</span>
             {{ $total }} szt.
             <span class="text-zinc-300 dark:text-zinc-600">·</span>
-            {{ number_format($transactions > 0 ? $total / $transactions : 0, 2) }} szt./sprzedaż     
-
+            {{ number_format($transactions > 0 ? $total / $transactions : 0, 2) }} szt./sprzedaż
         </div>
 
         @if($total > 0)
             {{-- Stacked proportion bar --}}
             <div class="flex h-1.5 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
-                @if($pctDevices > 0)
-                    <div class="h-full bg-blue-400 dark:bg-blue-500 transition-all duration-500"
-                        style="width:{{ $pctDevices }}%" title="Urządzenia: {{ $devices }}"></div>
-                @endif
-                @if($pctAccess > 0)
-                    <div class="h-full bg-emerald-400 dark:bg-emerald-500 transition-all duration-500"
-                        style="width:{{ $pctAccess }}%" title="Akcesoria: {{ $accessories }}"></div>
-                @endif
-                @if($pctServices > 0)
-                    <div class="h-full bg-amber-400 dark:bg-amber-500 transition-all duration-500"
-                        style="width:{{ $pctServices }}%" title="Usługi: {{ $services }}"></div>
-                @endif
+                @foreach($categories as $cat)
+                    @if($cat['pct'] > 0)
+                        <div class="h-full {{ $cat['color'] }} transition-all duration-500"
+                            style="width:{{ $cat['pct'] }}%" title="{{ $cat['label'] }}: {{ round($cat['pct']) }}%"></div>
+                    @endif
+                @endforeach
             </div>
 
-            {{-- Legend --}}
-            <div class="flex items-center gap-3 text-xs text-zinc-400 dark:text-zinc-500">
-                <span class="flex items-center gap-1">
-                    <span class="size-1.5 rounded-full bg-blue-400 dark:bg-blue-500"></span>
-                    Urz. {{ $devices }}
-                    <span class="text-zinc-300 dark:text-zinc-600">({{ round($pctDevices) }}%)</span>
-                </span>
-                <span class="flex items-center gap-1">
-                    <span class="size-1.5 rounded-full bg-emerald-400 dark:bg-emerald-500"></span>
-                    Akc. {{ $accessories }}
-                    <span class="text-zinc-300 dark:text-zinc-600">({{ round($pctAccess) }}%)</span>
-                </span>
-                <span class="flex items-center gap-1">
-                    <span class="size-1.5 rounded-full bg-amber-400 dark:bg-amber-500"></span>
-                    Usł. {{ $services }}
-                    <span class="text-zinc-300 dark:text-zinc-600">({{ round($pctServices) }}%)</span>
-                </span>
+            {{-- Category details: 3 rows — label+count left, revenue+pct+profit right --}}
+            <div class="space-y-1">
+                @foreach($categories as $cat)
+                    <div class="flex items-center justify-between gap-2 text-xs">
+                        {{-- Left: dot + label + count --}}
+                        <div class="flex items-center gap-1.5 min-w-0">
+                            <span class="size-1.5 shrink-0 rounded-full {{ $cat['dot'] }}"></span>
+                            <span class="text-zinc-500 dark:text-zinc-400">{{ $cat['abbr'] }}</span>
+                            <span class="tabular-nums text-zinc-400 dark:text-zinc-500">{{ $cat['count'] }} szt.</span>
+                        </div>
+                        {{-- Right: revenue (pct) · profit (pct) --}}
+                        <div class="flex items-center gap-1.5 shrink-0 tabular-nums">
+                            <span class="text-zinc-700 dark:text-zinc-200 font-medium">
+                                {{ number_format($cat['revenue'] / 100, 0, ',', ' ') }} zł
+                            </span>
+                            <span class="text-zinc-400 dark:text-zinc-500">({{ round($cat['pct']) }}%)</span>
+                            @if($cat['profit'] !== null)
+                                <span class="text-zinc-300 dark:text-zinc-700">·</span>
+                                @php
+                                    $profitPct = $totalProfit != 0 ? round(($cat['profit'] / $totalProfit) * 100) : 0;
+                                @endphp
+                                <span class="{{ $cat['profit'] >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400' }}">
+                                    {{ $cat['profit'] >= 0 ? '+' : '' }}{{ number_format($cat['profit'] / 100, 0, ',', ' ') }} zł
+                                </span>
+                                <span class="text-zinc-400 dark:text-zinc-500">({{ $profitPct }}%)</span>
+                            @endif
+                        </div>
+                    </div>
+                @endforeach
             </div>
         @else
             <div class="text-xs text-zinc-300 dark:text-zinc-600">Brak sprzedaży</div>
         @endif
 
-        {{-- Accessory margin — previous vs current CALENDAR month, independent of the period switcher --}}
+        {{-- Accessory margin — previous vs current CALENDAR month --}}
         <div class="flex items-center justify-between text-xs pt-1.5 border-t border-zinc-100 dark:border-zinc-800">
             <span
                 class="text-zinc-400 dark:text-zinc-500"
                 title="Marża na akcesoriach: poprzedni miesiąc kalendarzowy → bieżący miesiąc kalendarzowy. Nie zależy od wybranego okresu."
             >Marża akc. (poprz. → bież. mies.)</span>
-            <div class="flex items-center gap-1.5 tabular-nums">
+
+            <span class="tabular-nums">
                 @if($hasPrevious)
-                    <span class="text-zinc-400 dark:text-zinc-500">{{ number_format($accessoryMarginPctPrevious, 2, ',', ' ') }}%</span>
+                    <span class="text-zinc-400 dark:text-zinc-500">{{ $accessoryMarginPctPrevious }}%</span>
                     <span class="text-zinc-300 dark:text-zinc-600">→</span>
                 @endif
 
                 @if($hasCurrent)
                     <span @class([
                         'font-medium',
-                        'text-emerald-500'                 => $improved,
-                        'text-red-400'                     => $hasPrevious && ! $improved,
-                        'text-zinc-600 dark:text-zinc-300' => ! $hasPrevious,
-                    ])>{{ number_format($accessoryMarginPctCurrent, 2, ',', ' ') }}%</span>
-                @elseif($hasPrevious)
-                    <span class="text-zinc-400 dark:text-zinc-500">—</span>
+                        'text-emerald-600 dark:text-emerald-400' => $improved,
+                        'text-red-600 dark:text-red-400'         => !$improved,
+                    ])>{{ $accessoryMarginPctCurrent }}%</span>
                 @else
-                    <span class="font-medium text-amber-500">brak danych</span>
+                    <span class="text-zinc-300 dark:text-zinc-600">—</span>
                 @endif
-            </div>
+            </span>
         </div>
-
     </div>
 </div>
