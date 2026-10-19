@@ -22,6 +22,7 @@
         <flux:select wire:model.live="catalog" class="w-48">
             <option value="current">Nowe produkty</option>
             <option value="legacy">Legacy</option>
+            <option value="archived">Zarchiwizowane</option>
             <option value="all">Wszystkie</option>
         </flux:select>
 
@@ -46,11 +47,11 @@
             <flux:table.column>Nazwa</flux:table.column>
             <flux:table.column>Kompatybilność</flux:table.column>
             <flux:table.column>Kategoria</flux:table.column>
-            <flux:table.column>Utworzył</flux:table.column>
+            {{-- <flux:table.column>Utworzył</flux:table.column> --}}
             {{-- <flux:table.column>Utworzono</flux:table.column>
             <flux:table.column>Zmienił</flux:table.column>
             <flux:table.column>Zmieniono</flux:table.column> --}}
-            <flux:table.column></flux:table.column>
+            <flux:table.column>qsdfasdasdad</flux:table.column>
         </flux:table.columns>
 
         <flux:table.rows>
@@ -77,7 +78,7 @@
                             <span class="text-zinc-400">—</span>
                         @endif
                     </flux:table.cell>
-                    <flux:table.cell>
+                    {{-- <flux:table.cell>
                         @if($product->creator)
                             <div class="flex items-center gap-2">
                                 <flux:avatar :name="$product->creator->login" size="xs" />
@@ -86,6 +87,34 @@
                         @else
                             <span class="text-zinc-400">—</span>
                         @endif
+                    </flux:table.cell> --}}
+                    <flux:table.cell class="text-right">
+                        <div class="flex items-center justify-end gap-1">
+                            @if($product->trashed())
+                                <flux:button
+                                    size="sm"
+                                    variant="ghost"
+                                    icon="arrow-uturn-left"
+                                    wire:click="restoreProduct({{ $product->id }})"
+                                    title="Przywróć"
+                                />
+                            @else
+                                @if(!$product->is_legacy || auth()->user()->isAdmin())
+                                    <flux:button size="sm" variant="ghost" icon="pencil" :href="route('catalog.products.edit', $product)" wire:navigate title="Edytuj" />
+                                @endif
+                                @if($product->items_count === 0 && !$product->is_legacy)
+                                    <flux:button
+                                        size="sm"
+                                        variant="ghost"
+                                        icon="archive-box"
+                                        class="text-amber-500"
+                                        wire:click="archiveProduct({{ $product->id }})"
+                                        wire:confirm="Czy na pewno chcesz zarchiwizować {{ $product->name }}?"
+                                        title="Archiwizuj"
+                                    />
+                                @endif
+                            @endif
+                        </div>
                     </flux:table.cell>
                     {{-- <flux:table.cell class="text-zinc-500 text-sm tabular-nums">{{ $product->created_at?->format('d.m.Y H:i') ?? '—' }}</flux:table.cell>
                     <flux:table.cell>

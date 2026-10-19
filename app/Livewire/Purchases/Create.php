@@ -16,12 +16,18 @@ use App\Models\Tax;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Illuminate\Support\Facades\DB;
-
+use App\Models\Device;
 class Create extends Component
 {
     public Shop $shop;
     public ?int $purchaseId = null;
     public bool $isDevice = false;
+
+    public string $filterBrand = '';
+    public string $filterCategory = '';
+    public string $filterDevice = '';
+    public ?int $filterDeviceId = null;
+    public ?string $filterDeviceName = null;
 
     // Purchase header
     public int $step = 1;
@@ -63,9 +69,60 @@ class Create extends Component
             $this->paymentMethod = $draft->payment_method?->value ?? 1;
             $this->purchaseType = $draft->purchase_type->value;
             $this->step = 3;
-            }
+            $this->conditionId = 1;
+            $this->setDefaultTax();
+        }
 
         $this->conditionId = 1;
+        
+    }
+
+    private function setDefaultTax(): void
+    {
+        $this->taxId = match ($this->purchaseType) {
+            2 => Tax::where('percentage', 0)->first()?->id,
+            default => Tax::where('percentage', 23)->first()?->id,
+        };
+    }
+
+    #[Computed]
+    public function deviceFilterResults()
+    {
+        if (strlen($this->filterDevice) < 2) {
+            return collect();
+        }
+
+        $search = $this->filterDevice;
+
+        return Device::with('brand')
+            ->leftJoin('brands', 'devices.brand_id', '=', 'brands.id')
+            ->where(function ($q) use ($search) {
+                $q->where('devices.model', 'like', "%{$search}%")
+                  ->orWhere('brands.name', 'like', "%{$search}%")
+                  ->orWhereRaw("CONCAT(COALESCE(brands.name, ''), ' ', devices.model) LIKE ?", ["%{$search}%"]);
+            })
+            ->select('devices.*')
+            ->orderBy('brands.name')
+            ->orderBy('devices.model')
+            ->limit(20)
+            ->get();
+    }
+
+    public function selectDeviceFilter(int $id): void
+    {
+        $device = Device::with('brand')->find($id);
+        if (!$device) return;
+
+        $this->filterDeviceId = $device->id;
+        $this->filterDeviceName = $device->full_name;
+        $this->filterDevice = '';
+    }
+
+    public function clearDeviceFilter(): void
+    {
+        $this->filterDeviceId = null;
+        $this->filterDeviceName = null;
+        $this->filterDevice = '';
     }
 
     #[Computed]
@@ -83,27 +140,55 @@ class Create extends Component
     }
 
     #[Computed]
+    public function brands()
+    {
+        return \App\Models\Brand::orderBy('name')->get();
+    }
+
+    #[Computed]
+    public function categories()
+    {
+        return \App\Models\Category::orderBy('name')->get();
+    }
+
+    #[Computed]
     public function productResults()
     {
-        if (strlen($this->productSearch) < 2) {
+        if (strlen($this->productSearch) < 2 && !$this->filterBrand && !$this->filterCategory && !$this->filterDeviceId) {
             return collect();
         }
 
-        $search = $this->productSearch;
-
-        return Product::current()
-            ->with(['brand', 'devices'])
+        $query = Product::current()
+            ->with(['brand', 'devices', 'category'])
             ->leftJoin('brands', 'products.brand_id', '=', 'brands.id')
-            ->where(function ($q) use ($search) {
+            ->select('products.*');
+
+        if ($this->productSearch !== '' && strlen($this->productSearch) >= 2) {
+            $search = $this->productSearch;
+            $query->where(function ($q) use ($search) {
                 $q->whereRaw("CONCAT(COALESCE(brands.name, ''), ' ', products.name) LIKE ?", ["%{$search}%"])
                   ->orWhere('products.name', 'like', "%{$search}%")
                   ->orWhere('brands.name', 'like', "%{$search}%")
                   ->orWhereHas('devices', fn ($d) => $d->where('model', 'like', "%{$search}%"));
-            })
-            ->select('products.*')
+            });
+        }
+
+        if ($this->filterBrand !== '') {
+            $query->where('products.brand_id', (int) $this->filterBrand);
+        }
+
+        if ($this->filterCategory !== '') {
+            $query->where('products.parent_category_id', (int) $this->filterCategory);
+        }
+
+        if ($this->filterDeviceId) {
+            $query->whereHas('devices', fn ($d) => $d->where('devices.id', $this->filterDeviceId));
+        }
+
+        return $query
             ->orderBy('brands.name')
             ->orderBy('products.name')
-            ->limit(20)
+            ->limit(30)
             ->get();
     }
 
@@ -193,6 +278,12 @@ class Create extends Component
         $categoryId = $product->parent_category_id;
         $this->isDevice = $categoryId === 2
         || \App\Models\Category::where('id', $categoryId)->where('parent_category_id', 2)->exists();
+
+        $this->productSearch = '';
+        $this->filterBrand = '';
+        $this->filterCategory = '';
+        $this->clearDeviceFilter();
+
     }
 
     public function clearProduct(): void
@@ -216,11 +307,8 @@ class Create extends Component
 
     public function updatedPurchaseType(): void
     {
-        $this->taxId = match ($this->purchaseType) {
-            2 => Tax::where('percentage', 0)->first()?->id,
-            default => Tax::where('percentage', 23)->first()?->id,
-        };
-
+        $this->setDefaultTax();
+        $this->conditionId = 1;
         $this->step = 2;
     }
 
@@ -254,13 +342,14 @@ class Create extends Component
         $this->validate([
             'productId' => 'required|exists:products,id',
             'conditionId' => 'required|exists:conditions,id',
-            'priceNet' => 'required|numeric|min:0',
+            'priceNet' => 'required|numeric|gt:0',
             'taxId' => 'required|exists:taxes,id',
         ], [
             'productId.required' => 'Wybierz produkt.',
             'conditionId.required' => 'Wybierz stan.',
             'priceNet.required' => 'Wpisz cenę netto.',
             'taxId.required' => 'Wybierz stawkę VAT.',
+            'priceNet.gt' => 'Cena musi być większa od zera.',
         ]);
 
         // Ensure draft exists
@@ -372,9 +461,6 @@ class Create extends Component
 
     private function resetItemForm(): void
     {
-        $this->productId = null;
-        $this->productName = null;
-        $this->productSearch = '';
         $this->priceNet = '';
         $this->isDevice = false;
         $this->featureImei = '';

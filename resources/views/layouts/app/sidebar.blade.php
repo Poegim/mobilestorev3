@@ -63,7 +63,8 @@
                     Kontakty
                 </flux:sidebar.item>
 
-                <flux:sidebar.group heading="Katalog" expandable :expanded="request()->routeIs('catalog.*')">
+                {{-- Catalog: expandable group on the expanded sidebar --}}
+                <flux:sidebar.group heading="Katalog" expandable :expanded="request()->routeIs('catalog.*')" class="in-data-flux-sidebar-collapsed-desktop:hidden">
                     <flux:sidebar.item icon="cube" :href="route('catalog.products.index')" :current="request()->routeIs('catalog.products.*')" wire:navigate>
                         Produkty
                     </flux:sidebar.item>
@@ -74,6 +75,17 @@
                         Marki
                     </flux:sidebar.item>
                 </flux:sidebar.group>
+
+                {{-- Catalog: single icon with a flyout menu on the collapsed desktop sidebar --}}
+                <flux:dropdown position="right" align="start" class="hidden in-data-flux-sidebar-collapsed-desktop:block">
+                    <flux:sidebar.item icon="book-open" :current="request()->routeIs('catalog.*')" tooltip="Katalog" />
+
+                    <flux:menu>
+                        <flux:menu.item icon="cube" :href="route('catalog.products.index')" wire:navigate>Produkty</flux:menu.item>
+                        <flux:menu.item icon="device-phone-mobile" :href="route('catalog.devices.index')" wire:navigate>Urządzenia</flux:menu.item>
+                        <flux:menu.item icon="tag" :href="route('catalog.brands.index')" wire:navigate>Marki</flux:menu.item>
+                    </flux:menu>
+                </flux:dropdown>
 
                 <flux:separator />
 

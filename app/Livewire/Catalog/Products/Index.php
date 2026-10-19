@@ -25,9 +25,11 @@ class Index extends Component
     #[Url]
     public string $catalog = 'current';
 
+    
+
     public function updated(string $property): void
     {
-        if (in_array($property, ['search', 'brandFilter', 'perPage'])) {
+        if (in_array($property, ['search', 'brandFilter', 'perPage', 'catalog'])) {
             $this->resetPage();
         }
     }
@@ -38,18 +40,35 @@ class Index extends Component
         return Brand::orderBy('name')->get();
     }
 
+    public function archiveProduct(int $id): void
+    {
+        $product = Product::find($id);
+        if (!$product || $product->is_legacy) return;
+
+        $product->delete(); // soft delete
+    }
+
+    public function restoreProduct(int $id): void
+    {
+        $product = Product::withTrashed()->find($id);
+        if (!$product) return;
+
+        $product->restore();
+    }
+
     public function render()
     {
         $query = match ($this->catalog) {
-                'legacy' => Product::legacy(),
-                'all'    => Product::query(),
-                default  => Product::current(),
-            };
+            'legacy' => Product::legacy(),
+            'archived' => Product::onlyTrashed()->current(),
+            'all' => Product::withTrashed(),
+            default => Product::current(),
+        };
 
         $query = $query
-        ->with(['brand', 'devices', 'creator', 'updater', 'category'])
+        ->with(['brand', 'devices', 'creator', 'category'])
         ->leftJoin('brands', 'products.brand_id', '=', 'brands.id')
-        ->select('products.*');
+        ->selectRaw('products.*, (SELECT COUNT(*) FROM items WHERE items.product_id = products.id) as items_count');
 
         if ($this->search !== '') {
             $search = $this->search;
