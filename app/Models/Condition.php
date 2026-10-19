@@ -6,6 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class Condition extends Model
 {
-    
-    protected $fillable = ['name'];
+    protected $fillable = ['name', 'is_active'];
+
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
 }

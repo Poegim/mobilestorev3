@@ -1,7 +1,14 @@
 <div>
     <div class="mb-6 flex items-center justify-between">
         <flux:heading size="xl">Zakupy</flux:heading>
-        <flux:badge size="lg">{{ $purchases->total() }} szt.</flux:badge>
+        <div class="flex items-center gap-3">
+            <flux:badge size="lg">{{ $purchases->total() }} szt.</flux:badge>
+            @if($this->shop)
+                <flux:button variant="primary" icon="plus" size="sm" :href="route('shop.purchases.create', $this->shop)" wire:navigate>
+                    Nowy zakup
+                </flux:button>
+            @endif
+        </div>
     </div>
 
     <div class="mb-4 flex gap-3">

@@ -47,9 +47,9 @@
             <flux:table.column>Kompatybilność</flux:table.column>
             <flux:table.column>Kategoria</flux:table.column>
             <flux:table.column>Utworzył</flux:table.column>
-            <flux:table.column>Utworzono</flux:table.column>
+            {{-- <flux:table.column>Utworzono</flux:table.column>
             <flux:table.column>Zmienił</flux:table.column>
-            <flux:table.column>Zmieniono</flux:table.column>
+            <flux:table.column>Zmieniono</flux:table.column> --}}
             <flux:table.column></flux:table.column>
         </flux:table.columns>
 
@@ -87,7 +87,7 @@
                             <span class="text-zinc-400">—</span>
                         @endif
                     </flux:table.cell>
-                    <flux:table.cell class="text-zinc-500 text-sm tabular-nums">{{ $product->created_at?->format('d.m.Y H:i') ?? '—' }}</flux:table.cell>
+                    {{-- <flux:table.cell class="text-zinc-500 text-sm tabular-nums">{{ $product->created_at?->format('d.m.Y H:i') ?? '—' }}</flux:table.cell>
                     <flux:table.cell>
                         @if($product->updater)
                             <div class="flex items-center gap-2">
@@ -103,7 +103,7 @@
                         @if(!$product->is_legacy || auth()->user()->isAdmin())
                             <flux:button size="sm" variant="ghost" icon="pencil" :href="route('catalog.products.edit', $product)" wire:navigate title="Edytuj" />
                         @endif
-                    </flux:table.cell>
+                    </flux:table.cell> --}}
                 </flux:table.row>
             @empty
                 <flux:table.row>

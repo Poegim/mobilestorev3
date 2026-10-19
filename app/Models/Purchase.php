@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\PaymentMethod;
+use App\Enums\PurchaseType;
 use Illuminate\Database\Eloquent\Model;
 
 class Purchase extends Model
@@ -10,11 +11,19 @@ class Purchase extends Model
     protected $fillable = [
         'parent_shop_id', 'contact_id',
         'valid', 'payment_method', 'invoice_number',
+        'is_draft', 'created_by', 'purchase_type',
     ];
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
 
     protected $casts = [
         'valid' => 'boolean',
         'payment_method' => PaymentMethod::class,
+        'purchase_type' => PurchaseType::class,
+        'is_draft' => 'boolean',
     ];
 
     public function shop()
