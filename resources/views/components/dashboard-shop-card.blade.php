@@ -66,6 +66,9 @@
     $totalProfit = $devicesProfit !== null
         ? ($devicesProfit + $accessoriesProfit + $servicesProfit)
         : null;
+
+    $avgAccessoryPrice = $accessories > 0 ? (int) round($accessoriesRevenue / $accessories) : null;
+
     // Accessory margin display state.
     $hasCurrent  = $accessoryMarginPctCurrent !== null;
     $hasPrevious = $accessoryMarginPctPrevious !== null;
@@ -164,6 +167,15 @@
         @else
             <div class="text-xs text-zinc-300 dark:text-zinc-600">Brak sprzedaży</div>
         @endif
+        
+        {{-- @if($avgAccessoryPrice !== null)
+            <div class="flex items-center justify-between text-xs">
+                <span class="text-zinc-400 dark:text-zinc-500">Śr. cena akc.</span>
+                <span class="tabular-nums text-zinc-600 dark:text-zinc-300">
+                    {{ number_format($avgAccessoryPrice / 100, 2, ',', ' ') }} zł
+                </span>
+            </div>
+        @endif --}}
 
         {{-- Accessory margin — previous vs current CALENDAR month --}}
         <div class="flex items-center justify-between text-xs pt-1.5 border-t border-zinc-100 dark:border-zinc-800">
