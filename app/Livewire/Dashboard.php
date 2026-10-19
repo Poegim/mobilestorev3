@@ -169,6 +169,12 @@ class Dashboard extends Component
 
     private function reloadModules(): void
     {
+        // Always update sell count for the active period (visible to all users).
+        [$from, $to] = $this->activeRange();
+        $this->todaySells = $this->scope()->apply(
+            Sell::where('valid', 1)->whereBetween('created_at', [$from, $to])
+        )->count();
+
         $reloadRevenue = $this->revenueLoaded;
         $reloadShop    = $this->shopStatsLoaded;
 

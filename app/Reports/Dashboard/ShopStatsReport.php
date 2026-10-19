@@ -88,7 +88,7 @@ class ShopStatsReport
                     ->leftJoin('taxes as si_t', 'si_t.id', '=', 'si_pi.tax_id')
                     ->whereIn('si_products.parent_category_id', $catIds)
                     ->toBase()
-                    ->selectRaw('COALESCE(SUM(sells_items.price - COALESCE(si_pi.price * (1 + COALESCE(si_t.percentage, 0) / 100), 0)), 0) as profit')
+                    ->selectRaw('COALESCE(SUM(CAST(sells_items.price AS SIGNED) - CAST(COALESCE(si_pi.price * (1 + COALESCE(si_t.percentage, 0) / 100), 0) AS SIGNED)), 0) as profit')
                     ->value('profit'))
                 : null;
 
@@ -97,8 +97,7 @@ class ShopStatsReport
                 ? (int) $soldItems()
                     ->where('sells_items.service_id', '>', 0)
                     ->toBase()
-                    ->selectRaw('COALESCE(SUM(sells_items.price - sells_items.internal_cost), 0) as profit')
-                    ->value('profit')
+                    ->selectRaw('COALESCE(SUM(CAST(sells_items.price AS SIGNED) - CAST(sells_items.internal_cost AS SIGNED)), 0) as profit')                    ->value('profit')
                 : null;
 
             return [

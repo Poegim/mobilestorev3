@@ -62,8 +62,10 @@
     ];
     
     // Total profit for percentage calculation (admin only).
-    $totalProfit = collect($categories)->sum('profit');
-    
+    // $totalProfit = collect($categories)->sum('profit');
+    $totalProfit = $devicesProfit !== null
+        ? ($devicesProfit + $accessoriesProfit + $servicesProfit)
+        : null;
     // Accessory margin display state.
     $hasCurrent  = $accessoryMarginPctCurrent !== null;
     $hasPrevious = $accessoryMarginPctPrevious !== null;
@@ -94,10 +96,18 @@
                     #{{ $shopId }}
                 </span>
             </div>
-            <span class="shrink-0 text-xs tabular-nums text-zinc-400 dark:text-zinc-500">
-                {{ number_format($revenue / 100, 0, ',', ' ') }} zł
-            </span>
         </div>
+        @if($totalProfit !== null)
+            <div class="shrink-0 flex items-center gap-1.5 text-xs tabular-nums">
+                <span class="text-zinc-400 dark:text-zinc-500">
+                    {{ number_format($revenue / 100, 0, ',', ' ') }} zł
+                </span>
+                <span class="text-zinc-300 dark:text-zinc-700">·</span>
+                <span class="{{ $totalProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400' }}">
+                    {{ $totalProfit >= 0 ? '+' : '' }}{{ number_format($totalProfit / 100, 0, ',', ' ') }} zł
+                </span>
+            </div>
+        @endif
 
         {{-- Sales count --}}
         <div class="text-xs tabular-nums text-zinc-500 dark:text-zinc-400">
@@ -131,19 +141,21 @@
                         </div>
                         {{-- Right: revenue (pct) · profit (pct) --}}
                         <div class="flex items-center gap-1.5 shrink-0 tabular-nums">
-                            <span class="text-zinc-700 dark:text-zinc-200 font-medium">
-                                {{ number_format($cat['revenue'] / 100, 0, ',', ' ') }} zł
-                            </span>
-                            <span class="text-zinc-400 dark:text-zinc-500">({{ round($cat['pct']) }}%)</span>
-                            @if($cat['profit'] !== null)
-                                <span class="text-zinc-300 dark:text-zinc-700">·</span>
-                                @php
-                                    $profitPct = $totalProfit != 0 ? round(($cat['profit'] / $totalProfit) * 100) : 0;
-                                @endphp
-                                <span class="{{ $cat['profit'] >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400' }}">
-                                    {{ $cat['profit'] >= 0 ? '+' : '' }}{{ number_format($cat['profit'] / 100, 0, ',', ' ') }} zł
+                            @if($totalProfit !== null)
+                                <span class="text-zinc-700 dark:text-zinc-200 font-medium">
+                                    {{ number_format($cat['revenue'] / 100, 0, ',', ' ') }} zł
                                 </span>
-                                <span class="text-zinc-400 dark:text-zinc-500">({{ $profitPct }}%)</span>
+                                <span class="text-zinc-400 dark:text-zinc-500">({{ round($cat['pct']) }}%)</span>
+                                @if($cat['profit'] !== null)
+                                    <span class="text-zinc-300 dark:text-zinc-700">·</span>
+                                    @php
+                                        $profitPct = $totalProfit != 0 ? round(($cat['profit'] / $totalProfit) * 100) : 0;
+                                    @endphp
+                                    <span class="{{ $cat['profit'] >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400' }}">
+                                        {{ $cat['profit'] >= 0 ? '+' : '' }}{{ number_format($cat['profit'] / 100, 0, ',', ' ') }} zł
+                                    </span>
+                                    <span class="text-zinc-400 dark:text-zinc-500">({{ $profitPct }}%)</span>
+                                @endif
                             @endif
                         </div>
                     </div>
