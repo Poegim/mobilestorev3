@@ -88,6 +88,9 @@ class Index extends Component
         // Filter by derived status (draft / completed / cancelled)
         if ($status = PurchaseStatus::tryFrom($this->status)) {
             $query->withStatus($status);
+        } else {
+            // "All" never includes unfinished drafts; pick the draft status to see them
+            $query->where('is_draft', false);
         }
 
         // Filter by date period
