@@ -27,10 +27,11 @@
                 <option value="{{ $pm->value }}">{{ $pm->label() }}</option>
             @endforeach
         </flux:select>
-        <flux:select wire:model.live="valid" class="w-40">
+        <flux:select wire:model.live="status" class="w-44">
             <option value="">Wszystkie</option>
-            <option value="1">Aktywne</option>
-            <option value="0">Anulowane</option>
+            @foreach(\App\Enums\PurchaseStatus::cases() as $s)
+                <option value="{{ $s->value }}">{{ $s->label() }}</option>
+            @endforeach
         </flux:select>
     </div>
 
@@ -46,13 +47,21 @@
             <flux:table.column>Brutto</flux:table.column>
             <flux:table.column>Płatność</flux:table.column>
             <flux:table.column>Status</flux:table.column>
+            <flux:table.column>Dodał</flux:table.column>
+
         </flux:table.columns>
 
         <flux:table.rows>
             @forelse($purchases as $purchase)
                 <flux:table.row>
-                    <flux:table.cell>{{ $purchase->id }}</flux:table.cell>
-                    <flux:table.cell>{{ $purchase->created_at->format('d.m.Y') }}</flux:table.cell>
+                <flux:table.cell variant="strong" class="tabular-nums">
+                    @php
+                        $showRoute = $this->shop
+                            ? route('shop.purchases.show', [$this->shop, $purchase])
+                            : route('purchases.show', $purchase);
+                    @endphp
+                    <flux:link href="{{ $showRoute }}" wire:navigate class="font-mono">#{{ $purchase->id }}</flux:link>
+                </flux:table.cell>                    <flux:table.cell>{{ $purchase->created_at->format('d.m.Y') }}</flux:table.cell>
                     <flux:table.cell>{{ $purchase->shop->name ?? '-' }}</flux:table.cell>
                     <flux:table.cell>{{ $purchase->contact->name ?? '-' }}</flux:table.cell>
                     <flux:table.cell>{{ $purchase->invoice_number ?: '-' }}</flux:table.cell>
@@ -61,10 +70,18 @@
                     <flux:table.cell>{{ number_format($purchase->getTotalGrossPrice() / 100, 2, ',', ' ') }} zł</flux:table.cell>
                     <flux:table.cell>{{ $purchase->payment_method->label() }}</flux:table.cell>
                     <flux:table.cell>
-                        @if($purchase->valid)
-                            <flux:badge size="sm" variant="primary">Aktywny</flux:badge>
+                    @php $status = $purchase->status(); @endphp
+                    <flux:badge flux:badge size="sm" :color="$status->color()">{{ $status->label() }}</flux:badge>
+                    </flux:table.cell>
+                    <flux:table.cell>
+                        @if($purchase->creator)
+                            <flux:tooltip :content="$purchase->creator->name">
+                                <span class="inline-flex">
+                                    <flux:avatar size="sm">{{ $purchase->creator->initials() }}</flux:avatar>
+                                </span>
+                            </flux:tooltip>
                         @else
-                            <flux:badge size="sm" color="red">Anulowany</flux:badge>
+                            <flux:avatar size="sm">-</flux:avatar>
                         @endif
                     </flux:table.cell>
                 </flux:table.row>

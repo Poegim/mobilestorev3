@@ -4,8 +4,10 @@ namespace App\Livewire\Purchases;
 
 use App\Enums\PaymentMethod;
 use App\Enums\Period;
+use App\Enums\PurchaseStatus;
 use App\Models\Purchase;
 use App\Models\Shop;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -13,9 +15,17 @@ class Index extends Component
 {
     use WithPagination;
 
+    #[Url]
     public string $search = '';
+
+    #[Url]
     public string $paymentMethod = '';
-    public string $valid = '';
+
+    /** PurchaseStatus value (draft | completed | cancelled); empty string = all */
+    #[Url]
+    public string $status = '';
+
+    #[Url]
     public string $period = 'today';
 
     public ?Shop $shop = null;
@@ -35,7 +45,7 @@ class Index extends Component
         $this->resetPage();
     }
 
-    public function updatedValid(): void
+    public function updatedStatus(): void
     {
         $this->resetPage();
     }
@@ -47,7 +57,7 @@ class Index extends Component
 
     public function render()
     {
-        $query = Purchase::with(['shop', 'contact', 'purchasedItems.tax'])
+        $query = Purchase::with(['shop', 'contact', 'purchasedItems.tax', 'creator'])
             ->orderByDesc('id');
 
         // Scope to shop if provided
@@ -75,21 +85,21 @@ class Index extends Component
             $query->where('payment_method', (int) $this->paymentMethod);
         }
 
-        // Filter by validity
-        if ($this->valid !== '') {
-            $query->where('valid', (int) $this->valid);
+        // Filter by derived status (draft / completed / cancelled)
+        if ($status = PurchaseStatus::tryFrom($this->status)) {
+            $query->withStatus($status);
         }
 
         // Filter by date period
         if ($this->period !== '' && $this->period !== 'all') {
-        $period = Period::tryFrom($this->period);
-        if ($period) {
-            $range = $period->dateRange();
-            if ($range) {
-                $query->whereBetween('created_at', $range);
+            $period = Period::tryFrom($this->period);
+            if ($period) {
+                $range = $period->dateRange();
+                if ($range) {
+                    $query->whereBetween('created_at', $range);
+                }
             }
         }
-    }
 
         $purchases = $query->paginate(25);
 

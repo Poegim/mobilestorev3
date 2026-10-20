@@ -23,6 +23,7 @@ use App\Livewire\Purchases\Create as PurchasesCreate;
 use App\Livewire\Purchases\Show as PurchasesShow;
 
 
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/', Dashboard::class)->name('dashboard');
     Route::get('items', ItemsIndex::class)->name('items.index');
@@ -31,6 +32,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('sells/{sell}', SellsShow::class)->name('sells.show');
     
     Route::get('purchases', PurchasesIndex::class)->name('purchases.index');
+    Route::get('purchases/{purchase}', PurchasesShow::class)->name('purchases.show');
     
     Route::get('shops', ShopsIndex::class)->name('shops.index');
 
@@ -57,6 +59,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::get('purchases/create', PurchasesCreate::class)->name('purchases.create');
         Route::get('purchases', PurchasesIndex::class)->name('purchases.index');
+        Route::get('purchases/{purchase}', PurchasesShow::class)->name('purchases.show');
 
         Route::get('transfers', TransfersIndex::class)->name('transfers.index');
         Route::get('transfers/create', TransfersCreate::class)->name('transfers.create');

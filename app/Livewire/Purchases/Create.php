@@ -38,6 +38,7 @@ class Create extends Component
     public int $paymentMethod = 1;
     public ?int $purchaseType = null;
     // Item form
+    public int $quantity = 1;
     public string $productSearch = '';
     public ?int $productId = null;
     public ?string $productName = null;
@@ -340,11 +341,13 @@ class Create extends Component
     public function addItem(): void
     {
         $this->validate([
+            'quantity' => 'required|integer|min:1|max:200',
             'productId' => 'required|exists:products,id',
             'conditionId' => 'required|exists:conditions,id',
             'priceNet' => 'required|numeric|gt:0',
             'taxId' => 'required|exists:taxes,id',
         ], [
+            'quantity.min' => 'Ilość musi wynosić co najmniej 1.',
             'productId.required' => 'Wybierz produkt.',
             'conditionId.required' => 'Wybierz stan.',
             'priceNet.required' => 'Wpisz cenę netto.',
@@ -358,29 +361,32 @@ class Create extends Component
         // Price in grosze
         $priceGrosze = (int) round((float) $this->priceNet * 100);
 
-        DB::transaction(function () use ($priceGrosze) {
-            // Create item with draft status
-            $item = Item::create([
-                'parent_shop_id' => $this->shop->id,
-                'product_id' => $this->productId,
-                'status' => ItemStatus::Draft,
-                'feature_condition_id' => $this->conditionId,
-                'feature_color_id' => $this->colorId,
-                'feature_imei' => $this->featureImei ?: null,
-                'feature_storage' => $this->featureStorage,
-                'feature_box' => $this->featureBox,
-                'feature_proof_of_purchase' => $this->featureProofOfPurchase,
-                'feature_comment' => $this->featureComment ?: null,
-                'feature_price' => $priceGrosze,
-            ]);
+        // Devices are always single units (unique IMEI); accessories can be added in bulk
+        $qty = $this->isDevice ? 1 : $this->quantity;
 
-            // Link to purchase
-            PurchasedItem::create([
-                'purchase_id' => $this->purchaseId,
-                'item_id' => $item->id,
-                'tax_id' => $this->taxId,
-                'price' => $priceGrosze,
-            ]);
+        DB::transaction(function () use ($priceGrosze, $qty) {
+            for ($i = 0; $i < $qty; $i++) {
+                $item = Item::create([
+                    'parent_shop_id' => $this->shop->id,
+                    'product_id' => $this->productId,
+                    'status' => ItemStatus::Draft,
+                    'feature_condition_id' => $this->conditionId,
+                    'feature_color_id' => $this->colorId,
+                    'feature_imei' => $this->featureImei ?: null,
+                    'feature_storage' => $this->featureStorage,
+                    'feature_box' => $this->featureBox,
+                    'feature_proof_of_purchase' => $this->featureProofOfPurchase,
+                    'feature_comment' => $this->featureComment ?: null,
+                    'feature_price' => $priceGrosze,
+                ]);
+
+                PurchasedItem::create([
+                    'purchase_id' => $this->purchaseId,
+                    'item_id' => $item->id,
+                    'tax_id' => $this->taxId,
+                    'price' => $priceGrosze,
+                ]);
+            }
         });
 
         // Reset item form, keep product for quick re-add
@@ -437,12 +443,20 @@ class Create extends Component
         $this->redirectRoute('shop.purchases.index', ['shop' => $this->shop], navigate: true);
     }
 
-    public function cancelDraft(): void
+    /** Delete the current draft purchase together with its draft items. */
+    private function deleteDraft(): void
     {
-        if (!$this->purchaseId) return;
+        if (!$this->purchaseId) {
+            return;
+        }
 
-        $purchase = Purchase::find($this->purchaseId);
-        if (!$purchase || !$purchase->is_draft) return;
+        $purchase = Purchase::where('id', $this->purchaseId)
+            ->where('is_draft', true)
+            ->first();
+
+        if (!$purchase) {
+            return;
+        }
 
         DB::transaction(function () use ($purchase) {
             $itemIds = $purchase->purchasedItems()->pluck('item_id');
@@ -450,6 +464,11 @@ class Create extends Component
             Item::whereIn('id', $itemIds)->where('status', ItemStatus::Draft)->delete();
             $purchase->delete();
         });
+    }
+
+    public function cancelDraft(): void
+    {
+        $this->deleteDraft();
 
         session()->flash('toast', [
             'heading' => 'Wersja robocza usunięta',
@@ -459,9 +478,29 @@ class Create extends Component
         $this->redirectRoute('shop.purchases.index', ['shop' => $this->shop], navigate: true);
     }
 
+    /** Discard the draft and start over from the purchase type selection. */
+    public function restart(): void
+    {
+        $this->deleteDraft();
+
+        // Restore every form property to its class default
+        $this->reset([
+            'purchaseId', 'purchaseType', 'step',
+            'contactId', 'contactName', 'contactSearch',
+            'invoiceNumber', 'paymentMethod',
+            'productId', 'productName', 'productSearch',
+            'filterBrand', 'filterCategory', 'filterDevice', 'filterDeviceId', 'filterDeviceName',
+            'isDevice', 'priceNet', 'taxId', 'colorId', 'conditionId',
+            'featureImei', 'featureStorage', 'featureBox', 'featureProofOfPurchase', 'featureComment',
+        ]);
+
+        $this->resetValidation();
+    }
+
     private function resetItemForm(): void
     {
         $this->priceNet = '';
+        $this->quantity = 1;
         $this->isDevice = false;
         $this->featureImei = '';
         $this->colorId = null;

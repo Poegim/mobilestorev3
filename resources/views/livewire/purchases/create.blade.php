@@ -8,6 +8,18 @@
         @if($purchaseId)
             <flux:badge color="amber" size="sm">Wersja robocza #{{ $purchaseId }}</flux:badge>
         @endif
+        @if($step > 1)
+            <flux:button
+                wire:click="restart"
+                wire:confirm="Przerwać i zacząć od nowa? Dodane przedmioty zostaną usunięte."
+                variant="ghost"
+                size="sm"
+                icon="arrow-path"
+                class="ml-auto"
+            >
+                Zacznij od nowa
+            </flux:button>
+        @endif
     </div>
 
     {{-- Step 1: Choose purchase type --}}
@@ -128,6 +140,10 @@
                                 <option value="{{ $cond->id }}">{{ $cond->name }}</option>
                             @endforeach
                         </flux:select>
+
+                        @unless($isDevice)
+                            <flux:input wire:model="quantity" label="Ilość" type="number" min="1" max="200" class="w-20" />
+                        @endunless
 
                         <flux:input wire:model="priceNet" label="Cena netto (zł)" placeholder="0.00" type="number" step="0.01" min="0" class="w-32" />
 

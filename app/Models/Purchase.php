@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\PaymentMethod;
+use App\Enums\PurchaseStatus;
 use App\Enums\PurchaseType;
 use Illuminate\Database\Eloquent\Model;
 
@@ -63,5 +64,24 @@ class Purchase extends Model
     public function getItemsCount(): int
     {
         return $this->purchasedItems->count();
+    }
+
+    /** Derived status: a draft is never "completed", even though valid = 1. */
+    public function status(): PurchaseStatus
+    {
+        return match (true) {
+            $this->is_draft => PurchaseStatus::Draft,
+            ! $this->valid  => PurchaseStatus::Cancelled,
+            default         => PurchaseStatus::Completed,
+        };
+    }
+
+    public function scopeWithStatus($query, PurchaseStatus $status)
+    {
+        return match ($status) {
+            PurchaseStatus::Draft     => $query->where('is_draft', true),
+            PurchaseStatus::Completed => $query->where('is_draft', false)->where('valid', true),
+            PurchaseStatus::Cancelled => $query->where('is_draft', false)->where('valid', false),
+        };
     }
 }

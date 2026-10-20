@@ -51,7 +51,7 @@
             {{-- <flux:table.column>Utworzono</flux:table.column>
             <flux:table.column>Zmienił</flux:table.column>
             <flux:table.column>Zmieniono</flux:table.column> --}}
-            <flux:table.column>qsdfasdasdad</flux:table.column>
+            <flux:table.column></flux:table.column>
         </flux:table.columns>
 
         <flux:table.rows>
