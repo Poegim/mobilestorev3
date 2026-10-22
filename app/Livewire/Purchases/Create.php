@@ -44,6 +44,7 @@ class Create extends Component
     public ?string $productName = null;
     public ?int $conditionId = null;
     public string $priceNet = '';
+    public string $priceSell = '';
     public ?int $taxId = null;
     public ?int $colorId = null;
     public string $featureImei = '';
@@ -377,7 +378,7 @@ class Create extends Component
                     'feature_box' => $this->featureBox,
                     'feature_proof_of_purchase' => $this->featureProofOfPurchase,
                     'feature_comment' => $this->featureComment ?: null,
-                    'feature_price' => $priceGrosze,
+                    'feature_price' => $this->priceSell !== '' ? (int) round((float) $this->priceSell * 100) : null,
                 ]);
 
                 PurchasedItem::create([
@@ -508,6 +509,7 @@ class Create extends Component
         $this->featureBox = false;
         $this->featureProofOfPurchase = false;
         $this->featureComment = '';
+        $this->priceSell = '';
         
         // Keep conditionId and taxId — usually the same for a batch
     }

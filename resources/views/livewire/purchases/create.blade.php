@@ -145,7 +145,8 @@
                             <flux:input wire:model="quantity" label="Ilość" type="number" min="1" max="200" class="w-20" />
                         @endunless
 
-                        <flux:input wire:model="priceNet" label="Cena netto (zł)" placeholder="0.00" type="number" step="0.01" min="0" class="w-32" />
+                        <flux:input wire:model="priceNet" label="Cena zakupu netto (zł)" placeholder="0.00" type="number" step="0.01" min="0" class="w-40" />
+                        <flux:input wire:model="priceSell" label="Cena sprzedaży (zł)" placeholder="Z cennika" type="number" step="0.01" min="0" class="w-40" />
 
                         <flux:select wire:model="taxId" label="VAT" class="w-24">
                             @foreach($this->taxes as $tax)
