@@ -4,6 +4,7 @@ namespace App\Livewire\Concerns;
 
 use App\Models\Brand;
 use App\Models\Device;
+use App\Models\ProductVariant;
 use Livewire\Attributes\Computed;
 
 trait WithProductForm
@@ -12,7 +13,7 @@ trait WithProductForm
     public string $newBrandName = '';
     public bool $showNewBrand = false;
 
-    // Pick-or-create devices
+    // Devices for initial variant (optional)
     public string $deviceSearch = '';
     public array $selectedDevices = [];
     public bool $showNewDevice = false;
@@ -121,7 +122,21 @@ trait WithProductForm
         return collect($this->selectedDevices)->pluck('id')->sort()->values()->all();
     }
 
-    /** Check if a product with same brand + name + devices already exists */
+    /**
+     * Every new-catalog product needs at least one variant.
+     * No devices selected = universal variant.
+     */
+    protected function createInitialVariant(int $productId): void
+    {
+        $variant = ProductVariant::create([
+            'product_id' => $productId,
+            'created_by' => auth()->id(),
+        ]);
+
+        $variant->devices()->sync($this->getSelectedDeviceIds());
+    }
+
+    /** Check if a product with same brand + name already exists */
     protected function isDuplicateProduct(?int $excludeId = null): bool
     {
         $query = \App\Models\Product::current()
@@ -132,15 +147,9 @@ trait WithProductForm
             $query->where('id', '!=', $excludeId);
         }
 
-        $selectedIds = $this->getSelectedDeviceIds();
-
-        foreach ($query->get() as $product) {
-            $existingIds = $product->devices()->pluck('devices.id')->sort()->values()->all();
-            if ($existingIds === $selectedIds) {
-                return true;
-            }
-        }
-
-        return false;
+        return $query->exists();
     }
+
+
+
 }

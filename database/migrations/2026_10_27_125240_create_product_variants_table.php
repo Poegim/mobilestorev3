@@ -8,18 +8,18 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('product_device', function (Blueprint $table) {
+        Schema::create('product_variants', function (Blueprint $table) {
             $table->increments('id');
             $table->unsignedInteger('product_id');
-            $table->unsignedInteger('device_id');
+            $table->unsignedInteger('created_by')->nullable();
+            $table->timestamps();
 
-            $table->unique(['product_id', 'device_id']);
-            $table->index('device_id');
+            $table->index('product_id');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('product_device');
+        Schema::dropIfExists('product_variants');
     }
 };

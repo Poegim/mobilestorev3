@@ -19,7 +19,7 @@ class Show extends Component
         'creator',
         'purchasedItems.tax',
         'purchasedItems.item.product.brand',
-        'purchasedItems.item.product.devices', // needed by Product::display_name
+        'purchasedItems.item.variant.devices',
         'purchasedItems.item.condition',
         'purchasedItems.item.color',
     ];
@@ -76,4 +76,5 @@ class Show extends Component
         return view('livewire.purchases.show')
             ->title("Zakup #{$this->purchase->id}");
     }
+    
 }

@@ -45,12 +45,8 @@
             <flux:table.column>ID</flux:table.column>
             <flux:table.column>Marka</flux:table.column>
             <flux:table.column>Nazwa</flux:table.column>
-            <flux:table.column>Kompatybilność</flux:table.column>
+            <flux:table.column>Warianty</flux:table.column>
             <flux:table.column>Kategoria</flux:table.column>
-            {{-- <flux:table.column>Utworzył</flux:table.column> --}}
-            {{-- <flux:table.column>Utworzono</flux:table.column>
-            <flux:table.column>Zmienił</flux:table.column>
-            <flux:table.column>Zmieniono</flux:table.column> --}}
             <flux:table.column></flux:table.column>
         </flux:table.columns>
 
@@ -59,12 +55,13 @@
                 <flux:table.row>
                     <flux:table.cell class="tabular-nums text-zinc-400">{{ $product->id }}</flux:table.cell>
                     <flux:table.cell>{{ $product->brand?->name ?? '—' }}</flux:table.cell>
-                    <flux:table.cell variant="strong">{{ $product->name }}</flux:table.cell>
-                    <flux:table.cell>
-                        @if($product->devices->isNotEmpty())
+                    <flux:table.cell variant="strong">
+                        <flux:link :href="route('catalog.products.show', $product)" wire:navigate>{{ $product->name }}</flux:link>
+                    </flux:table.cell>                    <flux:table.cell>
+                        @if($product->variants->isNotEmpty())
                             <div class="flex flex-wrap gap-1">
-                                @foreach($product->devices as $device)
-                                    <flux:badge size="sm" color="zinc">{{ $device->full_name }}</flux:badge>
+                                @foreach($product->variants as $variant)
+                                    <flux:badge size="sm" color="zinc">{{ $variant->display_name }}</flux:badge>
                                 @endforeach
                             </div>
                         @else
@@ -78,16 +75,7 @@
                             <span class="text-zinc-400">—</span>
                         @endif
                     </flux:table.cell>
-                    {{-- <flux:table.cell>
-                        @if($product->creator)
-                            <div class="flex items-center gap-2">
-                                <flux:avatar :name="$product->creator->login" size="xs" />
-                                <span class="text-sm text-zinc-500">{{ $product->creator->login }}</span>
-                            </div>
-                        @else
-                            <span class="text-zinc-400">—</span>
-                        @endif
-                    </flux:table.cell> --}}
+                    
                     <flux:table.cell class="text-right">
                         <div class="flex items-center justify-end gap-1">
                             @if($product->trashed())

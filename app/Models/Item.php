@@ -14,6 +14,7 @@ class Item extends Model
         'feature_memory', 'feature_storage',
         'feature_box', 'feature_proof_of_purchase', 'feature_comment', 'feature_dual_sim',
         'barcode_scanned_at', 'displaced_at',
+        'variant_id',
     ];
 
     protected $casts = [
@@ -30,6 +31,11 @@ class Item extends Model
     public function color()
     {
         return $this->belongsTo(Color::class, 'feature_color_id');
+    }
+
+    public function variant()
+    {
+        return $this->belongsTo(ProductVariant::class, 'variant_id');
     }
 
     public function simlockNetwork()

@@ -25,7 +25,7 @@ class Create extends Component
         ]);
 
         if ($this->isDuplicateProduct()) {
-            $this->addError('name', 'Taki produkt z tą samą kompatybilnością już istnieje.');
+            $this->addError('name', 'Taki produkt już istnieje.');
             return;
         }
 
@@ -38,10 +38,7 @@ class Create extends Component
             'updated_by' => auth()->id(),
         ]);
 
-        $selectedIds = $this->getSelectedDeviceIds();
-        if (!empty($selectedIds)) {
-            $product->devices()->sync($selectedIds);
-        }
+        $this->createInitialVariant($product->id);
 
         session()->flash('toast', [
             'heading' => 'Produkt dodany',

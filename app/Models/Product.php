@@ -34,9 +34,9 @@ class Product extends Model
         return $this->hasMany(ProductPrice::class);
     }
 
-    public function devices()
+    public function variants()
     {
-        return $this->belongsToMany(Device::class, 'product_device');
+        return $this->hasMany(ProductVariant::class);
     }
 
     public function creator()
@@ -59,7 +59,6 @@ class Product extends Model
         return $query->where('is_legacy', true);
     }
 
-    /** e.g. "3mk Flexible Glass iPhone 15/iPhone 16" */
     public function getDisplayNameAttribute(): string
     {
         $parts = [];
@@ -69,11 +68,6 @@ class Product extends Model
         }
 
         $parts[] = $this->name;
-
-        $deviceNames = $this->devices->pluck('model')->join('/');
-        if ($deviceNames) {
-            $parts[] = $deviceNames;
-        }
 
         return implode(' ', $parts);
     }

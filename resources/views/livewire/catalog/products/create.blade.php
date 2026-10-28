@@ -43,8 +43,7 @@
 
         {{-- Devices --}}
         <div>
-            <flux:label>Kompatybilność z urządzeniami</flux:label>
-
+            <flux:label>Pierwszy wariant: kompatybilność z urządzeniami (opcjonalnie)</flux:label>
             {{-- Selected devices --}}
             @if(!empty($selectedDevices))
                 <div class="mt-2 flex flex-wrap gap-1.5">

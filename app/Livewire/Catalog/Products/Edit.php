@@ -3,7 +3,6 @@
 namespace App\Livewire\Catalog\Products;
 
 use App\Livewire\Concerns\WithProductForm;
-use App\Models\Device;
 use App\Models\Product;
 use Livewire\Component;
 
@@ -21,15 +20,10 @@ class Edit extends Component
     {
         abort_if($product->is_legacy && !auth()->user()->isAdmin(), 403);
 
-        $this->product = $product->load(['brand', 'devices.brand']);
+        $this->product = $product->load('brand');
         $this->brandId = $product->brand_id;
         $this->name = $product->name;
         $this->categoryId = $product->parent_category_id ?: null;
-
-        $this->selectedDevices = $product->devices->map(fn (Device $d) => [
-            'id' => $d->id,
-            'full_name' => $d->full_name,
-        ])->all();
     }
 
     public function save(): void
@@ -43,7 +37,7 @@ class Edit extends Component
         ]);
 
         if ($this->isDuplicateProduct($this->product->id)) {
-            $this->addError('name', 'Taki produkt z tą samą kompatybilnością już istnieje.');
+            $this->addError('name', 'Taki produkt już istnieje.');
             return;
         }
 
@@ -54,7 +48,6 @@ class Edit extends Component
             'updated_by' => auth()->id(),
         ]);
 
-        $this->product->devices()->sync($this->getSelectedDeviceIds());
 
         session()->flash('toast', [
             'heading' => 'Produkt zaktualizowany',

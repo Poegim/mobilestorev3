@@ -8,6 +8,7 @@ use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Flux\Flux;
 
 class Index extends Component
 {
@@ -45,6 +46,16 @@ class Index extends Component
         $product = Product::find($id);
         if (!$product || $product->is_legacy) return;
 
+        // Any item blocks archiving, regardless of its status
+        if ($product->items()->exists()) {
+            Flux::toast(
+                text: "Produkt \"{$product->name}\" ma przypisane przedmioty.",
+                heading: 'Nie można zarchiwizować',
+                variant: 'danger',
+            );
+            return;
+        }
+
         $product->delete(); // soft delete
     }
 
@@ -66,7 +77,7 @@ class Index extends Component
         };
 
         $query = $query
-        ->with(['brand', 'devices', 'creator', 'category'])
+        ->with(['brand', 'variants.devices.brand', 'creator', 'category'])
         ->leftJoin('brands', 'products.brand_id', '=', 'brands.id')
         ->selectRaw('products.*, (SELECT COUNT(*) FROM items WHERE items.product_id = products.id) as items_count');
 
@@ -74,9 +85,9 @@ class Index extends Component
             $search = $this->search;
             $query->where(function ($q) use ($search) {
                 $q->whereRaw("CONCAT(COALESCE(brands.name, ''), ' ', products.name) LIKE ?", ["%{$search}%"])
-                  ->orWhere('products.name', 'like', "%{$search}%")
-                  ->orWhere('brands.name', 'like', "%{$search}%")
-                  ->orWhereHas('devices', fn ($d) => $d->where('model', 'like', "%{$search}%"));
+                    ->orWhere('products.name', 'like', "%{$search}%")
+                    ->orWhere('brands.name', 'like', "%{$search}%")
+                    ->orWhereHas('variants.devices', fn ($d) => $d->where('model', 'like', "%{$search}%"));
             });
         }
 

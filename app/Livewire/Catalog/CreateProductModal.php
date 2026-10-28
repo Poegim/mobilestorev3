@@ -1,0 +1,55 @@
+<?php
+
+namespace App\Livewire\Catalog;
+
+use App\Livewire\Concerns\WithProductForm;
+use App\Models\Product;
+use Livewire\Component;
+
+class CreateProductModal extends Component
+{
+    use WithProductForm;
+
+    public ?int $brandId = null;
+    public string $name = '';
+    public ?int $categoryId = null;
+
+    public function save(): void
+    {
+        $this->validate([
+            'name' => 'required|string|max:255',
+            'categoryId' => 'required|integer|exists:categories,id',
+        ], [
+            'name.required' => 'Wpisz nazwę produktu.',
+            'categoryId.required' => 'Wybierz kategorię.',
+        ]);
+
+        if ($this->isDuplicateProduct()) {
+            $this->addError('name', 'Taki produkt już istnieje.');
+            return;
+        }
+
+        $product = Product::create([
+            'name' => trim($this->name),
+            'brand_id' => $this->brandId,
+            'parent_category_id' => $this->categoryId,
+            'is_legacy' => false,
+            'created_by' => auth()->id(),
+            'updated_by' => auth()->id(),
+        ]);
+
+        // If devices were selected, create an initial variant
+        $this->createInitialVariant($product->id);
+
+        $this->dispatch('product-created', id: $product->id, name: $product->display_name);
+        $this->reset();
+        $this->resetValidation();
+
+        \Flux\Flux::modals()->close();
+    }
+
+    public function render()
+    {
+        return view('livewire.catalog.create-product-modal');
+    }
+}

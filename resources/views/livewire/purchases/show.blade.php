@@ -87,8 +87,9 @@
                     $item = $pi->item;
                 @endphp
                 <flux:table.row wire:key="line-{{ $pi->id }}">
-                    <flux:table.cell variant="strong">{{ $item?->product?->display_name ?? '—' }}</flux:table.cell>
-                    <flux:table.cell class="text-sm text-zinc-500">{{ $item?->condition?->name ?? '—' }}</flux:table.cell>
+                    <flux:table.cell variant="strong">
+                        {{ trim(($item?->product?->brand?->name ?? '') . ' ' . ($item?->product?->name ?? '—')) }}
+                    </flux:table.cell>                    <flux:table.cell class="text-sm text-zinc-500">{{ $item?->condition?->name ?? '—' }}</flux:table.cell>
                     <flux:table.cell class="text-sm text-zinc-500">{{ $item?->color?->name ?? '—' }}</flux:table.cell>
                     <flux:table.cell class="font-mono text-sm text-emerald-600">{{ $item?->feature_imei ?: '—' }}</flux:table.cell>
                     <flux:table.cell class="text-center tabular-nums">{{ $line['qty'] }}</flux:table.cell>

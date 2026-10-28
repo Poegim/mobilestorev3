@@ -28,4 +28,17 @@ class Device extends Model
     {
         return trim(($this->brand?->name ?? '') . ' ' . $this->model);
     }
+
+    public function scopeSearch($query, string $term)
+    {
+        return $query
+            ->leftJoin('brands', 'devices.brand_id', '=', 'brands.id')
+            ->where(function ($q) use ($term) {
+                $q->where('devices.model', 'like', "%{$term}%")
+                  ->orWhereRaw("CONCAT(COALESCE(brands.name, ''), ' ', devices.model) LIKE ?", ["%{$term}%"]);
+            })
+            ->select('devices.*')
+            ->orderBy('brands.name')
+            ->orderBy('devices.model');
+    }
 }
