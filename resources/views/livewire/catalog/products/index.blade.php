@@ -53,8 +53,15 @@
         <flux:table.rows>
             @forelse($products as $product)
                 <flux:table.row>
-                    <flux:table.cell class="tabular-nums text-zinc-400">{{ $product->id }}</flux:table.cell>
-                    <flux:table.cell>{{ $product->brand?->name ?? '—' }}</flux:table.cell>
+
+                    <flux:table.cell class="tabular-nums text-zinc-400">
+                        <flux:link href="{{ route('catalog.products.show', $product) }}" wire:navigate>{{ $product->id }}</flux:link>
+                    </flux:table.cell>
+                    <flux:table.cell>
+                        <flux:link href="{{ route('catalog.brands.index') }}">
+                        {{ $product->brand?->name ?? '—' }}
+                        </flux:link>
+                    </flux:table.cell>
                     <flux:table.cell variant="strong">
                         <flux:link :href="route('catalog.products.show', $product)" wire:navigate>{{ $product->name }}</flux:link>
                     </flux:table.cell>                    <flux:table.cell>

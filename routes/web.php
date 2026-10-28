@@ -15,10 +15,10 @@ use App\Livewire\Shops\Index as ShopsIndex;
 use Illuminate\Support\Facades\Route;
 use App\Livewire\Catalog\Products\Index as CatalogProductsIndex;
 use App\Livewire\Catalog\Products\Create as CatalogProductsCreate;
+use App\Livewire\Catalog\Brands\Index as CatalogBrandsIndex;
 use App\Livewire\Catalog\Products\Show as CatalogProductsShow;
 use App\Livewire\Catalog\Products\Edit as CatalogProductsEdit;
 use App\Livewire\Catalog\Devices\Index as CatalogDevicesIndex;
-use App\Livewire\Catalog\Brands\Index as CatalogBrandsIndex;
 use App\Livewire\Contacts\Index as ContactsIndex;
 use App\Livewire\Purchases\Create as PurchasesCreate;
 use App\Livewire\Purchases\Show as PurchasesShow;
@@ -48,8 +48,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     Route::get('catalog/devices', CatalogDevicesIndex::class)->name('catalog.devices.index');
     
+
     Route::get('catalog/brands', CatalogBrandsIndex::class)->name('catalog.brands.index');
-    
+
     Route::get('contacts', ContactsIndex::class)->name('contacts.index');
 
     Route::prefix('shop/{shop}')->name('shop.')->scopeBindings()->group(function () {
