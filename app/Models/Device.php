@@ -18,9 +18,9 @@ class Device extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function products()
+    public function variants()
     {
-        return $this->belongsToMany(Product::class, 'product_device');
+        return $this->belongsToMany(ProductVariant::class, 'variant_device', 'device_id', 'variant_id');
     }
 
     /** e.g. "Apple iPhone 16" */

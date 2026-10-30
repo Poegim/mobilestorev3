@@ -3,6 +3,7 @@
 namespace App\Livewire\Shops;
 
 use App\Enums\UserPrivilege;
+use App\Livewire\Concerns\DeniesAccess;
 use App\Models\Shop;
 use App\Models\User;
 use Flux\Flux;
@@ -18,7 +19,7 @@ use Livewire\WithPagination;
 
 class Index extends Component
 {
-    use WithPagination, WithFileUploads;
+    use WithPagination, WithFileUploads, DeniesAccess;
 
     public string $search = '';
     public bool $showArchived = false;
@@ -74,7 +75,10 @@ class Index extends Component
     // Shop management is admin-only.
     public function mount(): void
     {
-        abort_unless(auth()->user()->isAdmin(), 403);
+        $this->denyUnless(
+            auth()->user()->isAdmin(),
+            'Zarządzanie sklepami wymaga uprawnień administratora.'
+        );
     }
 
     protected function rules(): array

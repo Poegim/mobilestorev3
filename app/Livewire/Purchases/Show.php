@@ -26,14 +26,15 @@ class Show extends Component
 
     public function mount(Purchase $purchase, ?Shop $shop = null): void
     {
-        // Drafts live in the create form, they are not finished purchases
-        abort_if($purchase->is_draft, 404);
+        $this->denyIf(
+            $purchase->is_draft,
+            'Ten zakup jest jeszcze szkicem i nie może być wyświetlony.'
+        );
 
-        // Only people from the purchase's shop (or admins) may open it
         $user = auth()->user();
-        abort_unless(
+        $this->denyUnless(
             $user->isAdmin() || $user->shops()->whereKey($purchase->parent_shop_id)->exists(),
-            403
+            'Nie masz dostępu do zakupów tego sklepu.'
         );
 
         $this->purchase = $purchase->load(self::EAGER_LOADS);

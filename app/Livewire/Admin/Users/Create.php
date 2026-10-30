@@ -21,9 +21,10 @@ class Create extends Component
 
     public function mount(): void
     {
-        if (! auth()->user()->isAdmin()) {
-            abort(403);
-        }
+        $this->denyUnless(
+            auth()->user()->isAdmin(),
+            'Tworzenie użytkowników wymaga uprawnień administratora.'
+        );
     }
 
     #[Computed]

@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Catalog\Products;
 
+use App\Livewire\Concerns\DeniesAccess;
 use App\Livewire\Concerns\WithProductForm;
 use App\Models\Product;
 use Flux\Flux;
@@ -14,6 +15,7 @@ class Edit extends Component
 {
     // Brand creation + device search/selection (deviceSearch, selectedDevices, addDevice, removeDevice)
     use WithProductForm;
+    use DeniesAccess;
 
     public Product $product;
 
@@ -29,7 +31,10 @@ class Edit extends Component
 
     public function mount(Product $product): void
     {
-        abort_if($product->is_legacy && !auth()->user()->isAdmin(), 403);
+        $this->denyIf(
+            $product->is_legacy && !auth()->user()->isAdmin(),
+            'Ten produkt jest archiwalny i dostępny tylko dla administratorów.'
+        );
 
         $this->product = $product->load('brand');
         $this->brandId = $product->brand_id;

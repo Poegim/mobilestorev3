@@ -23,9 +23,10 @@ class Show extends Component
 
     public function mount(User $user): void
     {
-        if (! auth()->user()->isAdmin()) {
-            abort(403);
-        }
+        $this->denyUnless(
+            auth()->user()->isAdmin(),
+            'Podgląd użytkowników wymaga uprawnień administratora.'
+        );
 
         $this->user = $user->load('shops');
 

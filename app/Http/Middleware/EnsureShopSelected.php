@@ -16,7 +16,14 @@ class EnsureShopSelected
             $user = $request->user();
 
             if ($user && !$user->hasAccessToShop($shop)) {
-                abort(403);
+                session()->flash('toast', [
+                    'duration' => false,
+                    'heading' => 'Brak dostępu',
+                    'text'    => 'Nie masz uprawnień do sklepu "' . $shop->name . '".',
+                    'variant' => 'danger',
+                ]);
+
+                return redirect()->route('dashboard');
             }
 
             app()->instance('currentShop', $shop);

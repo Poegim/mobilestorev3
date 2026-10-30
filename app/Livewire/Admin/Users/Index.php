@@ -19,9 +19,10 @@ class Index extends Component
 
     public function mount(): void
     {
-        if (! auth()->user()->isAdmin()) {
-            abort(403);
-        }
+        $this->denyUnless(
+            auth()->user()->isAdmin(),
+            'Lista użytkowników dostępna tylko dla administratorów.'
+        );
     }
 
     public function updatedSearch(): void

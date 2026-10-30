@@ -501,6 +501,7 @@ class Create extends Component
         });
 
         session()->flash('toast', [
+            'duration' => false,
             'heading' => 'Zakup potwierdzony',
             'text' => "Zakup #{$purchase->id} — dodano {$purchase->purchasedItems()->count()} przedmiotów",
             'variant' => 'success',
@@ -514,6 +515,7 @@ class Create extends Component
         $this->deleteDraft();
 
         session()->flash('toast', [
+            'duration' => false,
             'heading' => 'Wersja robocza usunięta',
             'variant' => 'warning',
         ]);

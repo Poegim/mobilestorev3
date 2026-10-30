@@ -41,6 +41,7 @@ class Create extends Component
         $this->createInitialVariant($product->id);
 
         session()->flash('toast', [
+            'duration' => false,
             'heading' => 'Produkt dodany',
             'text' => $product->display_name,
             'variant' => 'success',

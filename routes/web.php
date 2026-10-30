@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Route;
 use App\Livewire\Catalog\Products\Index as CatalogProductsIndex;
 use App\Livewire\Catalog\Products\Create as CatalogProductsCreate;
 use App\Livewire\Catalog\Brands\Index as CatalogBrandsIndex;
+use App\Livewire\Catalog\Brands\Show as CatalogBrandsShow;
 use App\Livewire\Catalog\Products\Show as CatalogProductsShow;
 use App\Livewire\Catalog\Products\Edit as CatalogProductsEdit;
 use App\Livewire\Catalog\Devices\Index as CatalogDevicesIndex;
@@ -50,6 +51,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
 
     Route::get('catalog/brands', CatalogBrandsIndex::class)->name('catalog.brands.index');
+    Route::get('catalog/brands/{brand}', CatalogBrandsShow::class)->name('catalog.brands.show');
+
+    Route::get('catalog/devices', \App\Livewire\Catalog\Devices\Index::class)->name('catalog.devices.index');
 
     Route::get('contacts', ContactsIndex::class)->name('contacts.index');
 
