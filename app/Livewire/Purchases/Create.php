@@ -102,7 +102,7 @@ class Create extends Component
 
         return $price
             ? number_format($price / 100, 2, '.', '')
-            : 'wariant bez ceny';
+            : 'brak ceny';
     }
 
     // ─── Modal events ────────────────────────────────────────
