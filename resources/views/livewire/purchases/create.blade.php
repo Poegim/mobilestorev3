@@ -210,7 +210,7 @@
                             </div>
                         @endif
 
-                        <flux:input wire:model="priceSell" label="Cena sprzedaży (zł)" placeholder="Z cennika" type="number" step="0.01" min="0" class="w-40" />
+                        <flux:input wire:model="priceSell" label="Cena sprzedaży (zł)" :placeholder="$this->sellPricePlaceholder" type="number" step="0.01" min="0" class="w-48" />
                         <flux:input wire:model="featureComment" label="Komentarz" placeholder="Opcjonalnie..." class="w-44" />
 
                         <flux:button wire:click="addItem" variant="primary" icon="plus" class="mb-px">Dodaj</flux:button>
@@ -293,6 +293,7 @@
                         <flux:table.column>Netto</flux:table.column>
                         <flux:table.column>VAT</flux:table.column>
                         <flux:table.column>Brutto</flux:table.column>
+                        <flux:table.column>Cena sprzedaży</flux:table.column>
                         <flux:table.column></flux:table.column>
                     </flux:table.columns>
                     <flux:table.rows>
@@ -306,6 +307,14 @@
                                 <flux:table.cell class="tabular-nums">{{ number_format($pi->price / 100, 2, ',', ' ') }} zł</flux:table.cell>
                                 <flux:table.cell class="text-sm text-zinc-500">{{ $pi->tax?->name ?? '—' }}</flux:table.cell>
                                 <flux:table.cell class="tabular-nums font-medium">{{ number_format($pi->getGrossPrice() / 100, 2, ',', ' ') }} zł</flux:table.cell>
+                                <flux:table.cell class="tabular-nums">
+                                    @php $sellPrice = $pi->item?->getSellingPrice(); @endphp
+                                    @if($sellPrice)
+                                        {{ number_format($sellPrice / 100, 2, ',', ' ') }} zł
+                                    @else
+                                        <flux:badge size="sm" color="amber">Brak ceny</flux:badge>
+                                    @endif
+                                </flux:table.cell>
                                 <flux:table.cell>
                                     <flux:button wire:click="removeItem({{ $pi->id }})" variant="ghost" size="sm" icon="trash" class="text-red-500" />
                                 </flux:table.cell>

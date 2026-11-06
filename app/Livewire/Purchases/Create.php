@@ -89,6 +89,22 @@ class Create extends Component
         }
     }
 
+    /** Placeholder for the selling price input: shows the variant price without filling the field */
+    #[Computed]
+    public function sellPricePlaceholder(): string
+    {
+        if ($this->selectedVariantId === '') {
+            return 'Wybierz wariant';
+        }
+
+        $price = collect($this->productVariants)
+            ->firstWhere('id', (int) $this->selectedVariantId)['price'] ?? null;
+
+        return $price
+            ? number_format($price / 100, 2, '.', '')
+            : 'wariant bez ceny';
+    }
+
     // ─── Modal events ────────────────────────────────────────
 
     #[On('product-created')]
@@ -340,6 +356,7 @@ class Create extends Component
         $this->productVariants = $variants->map(fn ($v) => [
             'id' => $v->id,
             'display_name' => $v->display_name,
+            'price' => $v->price,
         ])->all();
 
         // Auto-select if only one variant
