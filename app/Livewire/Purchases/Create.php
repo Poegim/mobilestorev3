@@ -35,6 +35,8 @@ class Create extends Component
     public string $invoiceNumber = '';
     public int $paymentMethod = 1;
 
+    public bool $aggregateView = true;
+
     // Product search
     public string $productSearch = '';
     public string $filterBrand = '';
@@ -105,6 +107,27 @@ class Create extends Component
             : 'brak ceny';
     }
 
+    #[Computed]
+    public function draftLines()
+    {
+        return $this->draftItems->groupBy(function ($pi) {
+            return implode('|', [
+                $pi->item?->product_id,
+                $pi->item?->variant_id,
+                $pi->item?->feature_condition_id,
+                $pi->item?->feature_color_id,
+                $pi->item?->feature_imei ?: '',
+                $pi->tax_id,
+                $pi->price,
+                $pi->item?->feature_price, // selling price override
+            ]);
+        })->map(fn ($group) => [
+            'pi' => $group->first(),
+            'qty' => $group->count(),
+            'ids' => $group->pluck('id')->all(),
+        ])->values();
+    }
+
     // ─── Modal events ────────────────────────────────────────
 
     #[On('product-created')]
@@ -163,6 +186,7 @@ class Create extends Component
             'variantDeviceSearch', 'newVariantDevices',
             'priceNet', 'priceSell', 'taxId', 'colorId', 'conditionId', 'quantity',
             'featureImei', 'featureStorage', 'featureBox', 'featureProofOfPurchase', 'featureComment',
+            'aggregateView',
         ]);
         $this->resetValidation();
     }

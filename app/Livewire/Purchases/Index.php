@@ -57,7 +57,8 @@ class Index extends Component
 
     public function render()
     {
-        $query = Purchase::with(['shop', 'contact', 'purchasedItems.tax', 'creator'])
+        $query = Purchase::with(['shop', 'contact', 'creator', 'purchasedItems.tax'])
+            ->orderByDesc('is_draft')
             ->orderByDesc('id');
 
         // Scope to shop if provided
@@ -85,22 +86,19 @@ class Index extends Component
             $query->where('payment_method', (int) $this->paymentMethod);
         }
 
-        // Filter by derived status (draft / completed / cancelled)
         if ($status = PurchaseStatus::tryFrom($this->status)) {
             $query->withStatus($status);
-        } else {
-            // "All" never includes unfinished drafts; pick the draft status to see them
-            $query->where('is_draft', false);
         }
 
         // Filter by date period
         if ($this->period !== '' && $this->period !== 'all') {
             $period = Period::tryFrom($this->period);
-            if ($period) {
-                $range = $period->dateRange();
-                if ($range) {
-                    $query->whereBetween('created_at', $range);
-                }
+            $range = $period->dateRange();
+            if ($range) {
+                // Unfinished drafts stay visible regardless of the period
+                $query->where(fn ($q) => $q
+                    ->where('is_draft', true)
+                    ->orWhereBetween('created_at', $range));
             }
         }
 

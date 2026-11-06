@@ -53,8 +53,7 @@
 
         <flux:table.rows>
             @forelse($purchases as $purchase)
-                <flux:table.row>
-                <flux:table.cell variant="strong" class="tabular-nums">
+                <flux:table.row @class(['bg-amber-50/60 dark:bg-amber-950/20' => $purchase->is_draft])>                <flux:table.cell variant="strong" class="tabular-nums">
                     @php
                         $showRoute = $this->shop
                             ? route('shop.purchases.show', [$this->shop, $purchase])
@@ -70,8 +69,16 @@
                     <flux:table.cell>{{ number_format($purchase->getTotalGrossPrice() / 100, 2, ',', ' ') }} zł</flux:table.cell>
                     <flux:table.cell>{{ $purchase->payment_method->label() }}</flux:table.cell>
                     <flux:table.cell>
-                    @php $status = $purchase->status(); @endphp
-                    <flux:badge flux:badge size="sm" :color="$status->color()">{{ $status->label() }}</flux:badge>
+                        @php $status = $purchase->status(); @endphp
+                        <div class="flex items-center gap-2">
+                            <flux:badge size="sm" :color="$status->color()">{{ $status->label() }}</flux:badge>
+
+                            @if($purchase->is_draft && $purchase->created_by === auth()->id())
+                                <flux:button size="sm" variant="primary" :href="route('shop.purchases.create', $purchase->shop)" wire:navigate>
+                                    Kontynuuj
+                                </flux:button>
+                            @endif
+                        </div>
                     </flux:table.cell>
                     <flux:table.cell>
                         @if($purchase->creator)

@@ -278,7 +278,18 @@
             <div class="flex items-center justify-between mb-4">
                 <flux:heading size="sm">Przedmioty</flux:heading>
                 @if($this->draftItems->isNotEmpty())
-                    <flux:badge size="sm">{{ $this->draftItems->count() }} szt.</flux:badge>
+                    @if($this->draftItems->isNotEmpty())
+                        <div class="flex items-center gap-2">
+                            <flux:badge size="sm">{{ $this->draftItems->count() }} szt.</flux:badge>
+                            <button
+                                type="button"
+                                wire:click="$toggle('aggregateView')"
+                                class="text-xs text-blue-500 hover:underline"
+                            >
+                                {{ $aggregateView ? 'Pokaż szczegółowo' : 'Agreguj' }}
+                            </button>
+                        </div>
+                    @endif
                 @endif
             </div>
 
@@ -289,37 +300,70 @@
                         <flux:table.column>Wariant</flux:table.column>
                         <flux:table.column>Stan</flux:table.column>
                         <flux:table.column>Kolor</flux:table.column>
-                        <flux:table.column>IMEI</flux:table.column>
-                        <flux:table.column>Netto</flux:table.column>
+                        @unless($aggregateView)
+                            <flux:table.column>IMEI</flux:table.column>
+                        @endunless
+                        <flux:table.column class="text-center">Szt.</flux:table.column>
+                        <flux:table.column>Netto / szt.</flux:table.column>
                         <flux:table.column>VAT</flux:table.column>
                         <flux:table.column>Brutto</flux:table.column>
                         <flux:table.column>Cena sprzedaży</flux:table.column>
                         <flux:table.column></flux:table.column>
                     </flux:table.columns>
                     <flux:table.rows>
-                        @foreach($this->draftItems as $pi)
-                            <flux:table.row>
-                                <flux:table.cell variant="strong">{{ $pi->item?->product?->display_name ?? '—' }}</flux:table.cell>
-                                <flux:table.cell class="text-sm text-zinc-500">{{ $pi->item?->variant?->display_name ?? 'Uniwersalny' }}</flux:table.cell>
-                                <flux:table.cell class="text-sm text-zinc-500">{{ $pi->item?->condition?->name ?? '—' }}</flux:table.cell>
-                                <flux:table.cell class="text-sm text-zinc-500">{{ $pi->item?->color?->name ?? '—' }}</flux:table.cell>
-                                <flux:table.cell class="font-mono text-sm text-emerald-600">{{ $pi->item?->feature_imei ?? '—' }}</flux:table.cell>
-                                <flux:table.cell class="tabular-nums">{{ number_format($pi->price / 100, 2, ',', ' ') }} zł</flux:table.cell>
-                                <flux:table.cell class="text-sm text-zinc-500">{{ $pi->tax?->name ?? '—' }}</flux:table.cell>
-                                <flux:table.cell class="tabular-nums font-medium">{{ number_format($pi->getGrossPrice() / 100, 2, ',', ' ') }} zł</flux:table.cell>
-                                <flux:table.cell class="tabular-nums">
-                                    @php $sellPrice = $pi->item?->getSellingPrice(); @endphp
-                                    @if($sellPrice)
-                                        {{ number_format($sellPrice / 100, 2, ',', ' ') }} zł
-                                    @else
-                                        <flux:badge size="sm" color="amber">Brak ceny</flux:badge>
-                                    @endif
-                                </flux:table.cell>
-                                <flux:table.cell>
-                                    <flux:button wire:click="removeItem({{ $pi->id }})" variant="ghost" size="sm" icon="trash" class="text-red-500" />
-                                </flux:table.cell>
-                            </flux:table.row>
-                        @endforeach
+                        @if($aggregateView)
+                            @foreach($this->draftLines as $line)
+                                @php $pi = $line['pi']; @endphp
+                                <flux:table.row>
+                                    <flux:table.cell variant="strong">{{ $pi->item?->product?->display_name ?? '—' }}</flux:table.cell>
+                                    <flux:table.cell class="text-sm text-zinc-500">{{ $pi->item?->variant?->display_name ?? 'Uniwersalny' }}</flux:table.cell>
+                                    <flux:table.cell class="text-sm text-zinc-500">{{ $pi->item?->condition?->name ?? '—' }}</flux:table.cell>
+                                    <flux:table.cell class="text-sm text-zinc-500">{{ $pi->item?->color?->name ?? '—' }}</flux:table.cell>
+                                    <flux:table.cell class="text-center tabular-nums font-medium">{{ $line['qty'] }}</flux:table.cell>
+                                    <flux:table.cell class="tabular-nums">{{ number_format($pi->price / 100, 2, ',', ' ') }} zł</flux:table.cell>
+                                    <flux:table.cell class="text-sm text-zinc-500">{{ $pi->tax?->name ?? '—' }}</flux:table.cell>
+                                    <flux:table.cell class="tabular-nums font-medium">{{ number_format($pi->getGrossPrice() * $line['qty'] / 100, 2, ',', ' ') }} zł</flux:table.cell>
+                                    <flux:table.cell class="tabular-nums">
+                                        @php $sellPrice = $pi->item?->getSellingPrice(); @endphp
+                                        @if($sellPrice)
+                                            {{ number_format($sellPrice / 100, 2, ',', ' ') }} zł
+                                        @else
+                                            <flux:badge size="sm" color="amber">Brak</flux:badge>
+                                        @endif
+                                    </flux:table.cell>
+                                    <flux:table.cell>
+                                        @if($line['qty'] === 1)
+                                            <flux:button wire:click="removeItem({{ $line['ids'][0] }})" variant="ghost" size="sm" icon="trash" class="text-red-500" />
+                                        @endif
+                                    </flux:table.cell>
+                                </flux:table.row>
+                            @endforeach
+                        @else
+                            @foreach($this->draftItems as $pi)
+                                <flux:table.row>
+                                    <flux:table.cell variant="strong">{{ $pi->item?->product?->display_name ?? '—' }}</flux:table.cell>
+                                    <flux:table.cell class="text-sm text-zinc-500">{{ $pi->item?->variant?->display_name ?? 'Uniwersalny' }}</flux:table.cell>
+                                    <flux:table.cell class="text-sm text-zinc-500">{{ $pi->item?->condition?->name ?? '—' }}</flux:table.cell>
+                                    <flux:table.cell class="text-sm text-zinc-500">{{ $pi->item?->color?->name ?? '—' }}</flux:table.cell>
+                                    <flux:table.cell class="font-mono text-sm text-emerald-600">{{ $pi->item?->feature_imei ?? '—' }}</flux:table.cell>
+                                    <flux:table.cell class="text-center tabular-nums">1</flux:table.cell>
+                                    <flux:table.cell class="tabular-nums">{{ number_format($pi->price / 100, 2, ',', ' ') }} zł</flux:table.cell>
+                                    <flux:table.cell class="text-sm text-zinc-500">{{ $pi->tax?->name ?? '—' }}</flux:table.cell>
+                                    <flux:table.cell class="tabular-nums font-medium">{{ number_format($pi->getGrossPrice() / 100, 2, ',', ' ') }} zł</flux:table.cell>
+                                    <flux:table.cell class="tabular-nums">
+                                        @php $sellPrice = $pi->item?->getSellingPrice(); @endphp
+                                        @if($sellPrice)
+                                            {{ number_format($sellPrice / 100, 2, ',', ' ') }} zł
+                                        @else
+                                            <flux:badge size="sm" color="amber">Brak</flux:badge>
+                                        @endif
+                                    </flux:table.cell>
+                                    <flux:table.cell>
+                                        <flux:button wire:click="removeItem({{ $pi->id }})" variant="ghost" size="sm" icon="trash" class="text-red-500" />
+                                    </flux:table.cell>
+                                </flux:table.row>
+                            @endforeach
+                        @endif
                     </flux:table.rows>
                 </flux:table>
 
