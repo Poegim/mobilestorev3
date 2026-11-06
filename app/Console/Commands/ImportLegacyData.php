@@ -43,7 +43,6 @@ class ImportLegacyData extends Command
         $this->importUsersShops();
         $this->importItems();
         $this->importServices();
-        $this->importProductPrices();
         $this->importPurchases();
         $this->importPurchasesItems();
         $this->importSells();
@@ -63,7 +62,6 @@ class ImportLegacyData extends Command
             'transfers_items', 'transfers',
             'sells_items', 'sells',
             'purchases_items', 'purchases',
-            'product_prices', 'items',
             'users_shops', 'contacts',
             'shops', 'products', 'categories',
             'brands', 'conditions', 'taxes',
@@ -300,19 +298,6 @@ class ImportLegacyData extends Command
             'feature_dual_sim' => $r['feature_dual_sim'] ?? 0,
             'barcode_scanned_at' => $r['barcode_scanned_timestamp'] > 0 ? date('Y-m-d H:i:s', $r['barcode_scanned_timestamp']) : null,
             'displaced_at' => $r['displacement_timestamp'] > 0 ? date('Y-m-d H:i:s', $r['displacement_timestamp']) : null,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-    }
-
-    private function importProductPrices(): void
-    {
-        $this->importChunked('Product Prices', 'feature_condition_and_price_products', 'product_prices', fn ($r) => [
-            'id' => $r['id'],
-            'product_id' => $r['product_id'],
-            'condition_id' => $r['condition_id'],
-            'shop_id' => $r['shop_id'],
-            'price' => $r['price'],
             'created_at' => now(),
             'updated_at' => now(),
         ]);

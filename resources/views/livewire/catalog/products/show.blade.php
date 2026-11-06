@@ -55,6 +55,7 @@
             <flux:table.column class="w-16">ID</flux:table.column>
             <flux:table.column>Kompatybilność</flux:table.column>
             <flux:table.column class="w-40">EAN</flux:table.column>
+            <flux:table.column class="w-32 text-right">Cena</flux:table.column>
             <flux:table.column class="w-32 text-center">Na magazynie</flux:table.column>
             <flux:table.column class="w-32 text-center">Wszystkich</flux:table.column>
         </flux:table.columns>
@@ -73,6 +74,9 @@
                         </div>
                     </flux:table.cell>
                     <flux:table.cell class="font-mono text-sm text-zinc-500">{{ $variant->ean ?? '—' }}</flux:table.cell>
+                    <flux:table.cell class="tabular-nums text-right">
+                        {{ $variant->price ? number_format($variant->price / 100, 2, ',', ' ') . ' zł' : '—' }}
+                    </flux:table.cell>
                     <flux:table.cell class="text-center tabular-nums">{{ $variant->in_store_count }}</flux:table.cell>
                     <flux:table.cell class="text-center tabular-nums text-zinc-500">{{ $variant->items_count }}</flux:table.cell>
                 </flux:table.row>

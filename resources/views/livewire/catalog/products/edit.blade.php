@@ -65,6 +65,8 @@
 
                 <flux:input wire:model="variantEan" label="EAN (opcjonalnie)" placeholder="5901234123457" class="w-56" />
 
+                <flux:input wire:model="variantPrice" label="Cena sprzedaży (zł)" placeholder="Brak" type="number" step="0.01" min="0" class="w-40" />
+
                 <flux:label>Urządzenia (puste = wariant uniwersalny)</flux:label>
 
                 @if(!empty($selectedDevices))
@@ -137,6 +139,7 @@
                 <flux:table.column class="w-16">ID</flux:table.column>
                 <flux:table.column>Kompatybilność</flux:table.column>
                 <flux:table.column class="w-40">EAN</flux:table.column>
+                <flux:table.column class="w-32 text-right">Cena</flux:table.column>
                 <flux:table.column class="w-28 text-center">Przedmiotów</flux:table.column>
                 <flux:table.column class="w-24"></flux:table.column>
             </flux:table.columns>
@@ -155,6 +158,9 @@
                             </div>
                         </flux:table.cell>
                         <flux:table.cell class="font-mono text-sm text-zinc-500">{{ $variant->ean ?? '—' }}</flux:table.cell>
+                        <flux:table.cell class="tabular-nums text-right">
+                            {{ $variant->price ? number_format($variant->price / 100, 2, ',', ' ') . ' zł' : '—' }}
+                        </flux:table.cell>
                         <flux:table.cell class="text-center tabular-nums text-zinc-500">{{ $variant->items_count }}</flux:table.cell>
                         <flux:table.cell class="text-right">
                             <div class="flex items-center justify-end gap-1">
@@ -175,7 +181,7 @@
                     </flux:table.row>
                 @empty
                     <flux:table.row>
-                        <flux:table.cell colspan="5" class="text-center text-zinc-500">Brak wariantów</flux:table.cell>
+                        <flux:table.cell colspan="6" class="text-center text-zinc-500">Brak wariantów</flux:table.cell>
                     </flux:table.row>
                 @endforelse
             </flux:table.rows>

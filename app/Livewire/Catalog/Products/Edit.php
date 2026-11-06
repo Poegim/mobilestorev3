@@ -23,6 +23,7 @@ class Edit extends Component
     public ?int $brandId = null;
     public string $name = '';
     public ?int $categoryId = null;
+    public string $variantPrice = '';
 
     // Section 2: variants, every change saved immediately; editingVariantId = null means a new variant
     public bool $showVariantForm = false;
@@ -97,6 +98,7 @@ class Edit extends Component
         $this->resetVariantForm();
         $this->editingVariantId = $variant->id;
         $this->variantEan = $variant->ean ?? '';
+        $this->variantPrice = $variant->price ? number_format($variant->price / 100, 2, '.', '') : '';
         $this->selectedDevices = $variant->devices
             ->map(fn ($d) => ['id' => $d->id, 'full_name' => $d->full_name])
             ->all();
@@ -124,10 +126,13 @@ class Edit extends Component
                 'nullable',
                 'digits_between:8,14',
                 Rule::unique('product_variants', 'ean')->ignore($this->editingVariantId),
+
             ],
+            'variantPrice' => 'nullable|numeric|min:0.01',
         ], [
             'variantEan.digits_between' => 'EAN musi mieć od 8 do 14 cyfr.',
             'variantEan.unique' => 'Ten EAN jest już przypisany do innego wariantu.',
+            'variantPrice.min' => 'Minimalna cena to 0,01 zł.',
         ]);
 
         // No devices = universal variant
@@ -154,7 +159,12 @@ class Edit extends Component
             ? $this->product->variants()->findOrFail($this->editingVariantId)
             : $this->product->variants()->create(['created_by' => auth()->id()]);
 
-        $variant->update(['ean' => trim($this->variantEan) ?: null]);
+        $variant->update([
+            'ean' => trim($this->variantEan) ?: null,
+            'price' => $this->variantPrice !== '' && (float) $this->variantPrice >= 0.01
+                ? (int) round((float) $this->variantPrice * 100)
+                : null,
+        ]);
         $variant->devices()->sync($deviceIds->all());
 
         unset($this->variants);
@@ -198,7 +208,7 @@ class Edit extends Component
 
     private function resetVariantForm(): void
     {
-        $this->reset(['showVariantForm', 'editingVariantId', 'variantEan', 'deviceSearch', 'selectedDevices']);
+        $this->reset(['showVariantForm', 'editingVariantId', 'variantEan', 'deviceSearch', 'selectedDevices', 'variantPrice']);
         $this->resetErrorBag(['variant', 'variantEan']);
     }
 
