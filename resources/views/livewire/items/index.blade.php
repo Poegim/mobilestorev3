@@ -146,6 +146,9 @@
                         <flux:table.cell class="whitespace-normal">
                             <div class="font-medium break-words min-w-32">
                                 {{ $item->product->brand->name ?? '' }} {{ $item->product->name }}
+                                @if($item->variant?->devices->isNotEmpty())
+                                    {{ $item->variant->display_name }}
+                                @endif
                             </div>
                         </flux:table.cell>
                     @endif

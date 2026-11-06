@@ -44,7 +44,7 @@
                     icon="truck"
                     :href="route($routePrefix . 'purchases.index', $shopParam)"
                     :current="request()->routeIs('*purchases.*')"
-                    :new-href="$currentShop ? '#' : null"
+                    :new-href="$currentShop ? route('shop.purchases.create', $currentShop) : null"
                 >
                     Zakupy
                 </x-sidebar-item-with-new>

@@ -6,9 +6,12 @@ use App\Models\Purchase;
 use App\Models\Shop;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
+use App\Livewire\Concerns\DeniesAccess;
 
 class Show extends Component
 {
+    use DeniesAccess;
+
     public Purchase $purchase;
 
     public ?Shop $shop = null;
