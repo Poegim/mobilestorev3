@@ -23,7 +23,8 @@ class AuthenticationTest extends TestCase
         $user = User::factory()->create();
 
         $response = $this->post(route('login.store'), [
-            'email' => $user->email,
+            // The login form expects a "login" field instead of "email"
+            'login' => $user->login,
             'password' => 'password',
         ]);
 
@@ -39,11 +40,11 @@ class AuthenticationTest extends TestCase
         $user = User::factory()->create();
 
         $response = $this->post(route('login.store'), [
-            'email' => $user->email,
+            'login' => $user->login,
             'password' => 'wrong-password',
         ]);
 
-        $response->assertSessionHasErrorsIn('email');
+        $response->assertSessionHasErrors('login');
 
         $this->assertGuest();
     }
@@ -60,7 +61,7 @@ class AuthenticationTest extends TestCase
         $user = User::factory()->withTwoFactor()->create();
 
         $response = $this->post(route('login.store'), [
-            'email' => $user->email,
+            'login' => $user->login,
             'password' => 'password',
         ]);
 
@@ -74,7 +75,8 @@ class AuthenticationTest extends TestCase
 
         $response = $this->actingAs($user)->post(route('logout'));
 
-        $response->assertRedirect(route('home'));
+        // Route "home" no longer exists, Fortify redirects to the root path
+        $response->assertRedirect('/');
 
         $this->assertGuest();
     }

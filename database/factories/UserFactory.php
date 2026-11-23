@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\UserPrivilege;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -25,6 +26,8 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
+            'privilege' => UserPrivilege::User1,
+            'login' => fake()->unique()->userName(),
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
@@ -34,6 +37,16 @@ class UserFactory extends Factory
             'two_factor_recovery_codes' => null,
             'two_factor_confirmed_at' => null,
         ];
+    }
+
+    /**
+     * Create a user with admin privileges.
+     */
+    public function admin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'privilege' => UserPrivilege::Admin,
+        ]);
     }
 
     /**

@@ -74,7 +74,8 @@ class User extends Authenticatable implements PasskeyUser
 
     public function isAdmin(): bool
     {
-        return $this->privilege->isAdmin();
+        // Users without an assigned privilege are never admins
+        return $this->privilege?->isAdmin() ?? false;
     }
 
     public function hasAccessToShop(Shop $shop): bool
