@@ -59,7 +59,7 @@
                     Transfery
                 </x-sidebar-item-with-new>
 
-                <flux:sidebar.item icon="user-group" :href="route('contacts.index')" :current="request()->routeIs('contacts.*')" wire:navigate>
+                <flux:sidebar.item icon="users" :href="route('contacts.index')" :current="request()->routeIs('contacts.*')" wire:navigate>
                     Kontakty
                 </flux:sidebar.item>
 

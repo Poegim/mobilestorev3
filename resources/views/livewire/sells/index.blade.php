@@ -3,6 +3,11 @@
     <div class="mb-6 flex items-center justify-between">
         <flux:heading size="xl">Sprzedaż</flux:heading>
         <div class="flex items-center gap-3">
+            @if($shop)
+                <flux:button :href="route('shop.sells.create', $shop)" variant="primary" size="sm" icon="plus" wire:navigate>
+                    Nowa sprzedaż
+                </flux:button>
+            @endif
             <flux:select wire:model.live="perPage" class="w-20" size="sm">
                 <option value="10">10</option>
                 <option value="25">25</option>

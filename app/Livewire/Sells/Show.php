@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Sells;
 
+use App\Enums\SellStatus;
 use App\Models\Sell;
 use App\Models\Shop;
 use Livewire\Attributes\Computed;
@@ -95,6 +96,21 @@ class Show extends Component
         return $this->shop
             ? route('shop.sells.index', $this->shop)
             : route('sells.index');
+    }
+
+    /** Cancel the entire sell – sets valid=0 and returns items to store. */
+    public function cancel(): void
+    {
+        $this->sell->invalidate();
+        $this->sell->refresh();
+        $this->sell->load(self::EAGER_LOADS);
+
+        // Clear cached computed properties so the view reflects new state
+        unset($this->validItems, $this->totalSellGross, $this->totalSellNet,
+              $this->totalPurchaseGross, $this->totalPurchaseNet, $this->totalIncome);
+
+        Flux::modal('confirm-cancel-sell')->close();
+        Flux::toast(variant: 'success', text: 'Sprzedaż została anulowana.');
     }
 
     public function render()

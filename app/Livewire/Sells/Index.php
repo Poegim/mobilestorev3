@@ -29,7 +29,7 @@ class Index extends Component
     public string $paymentMethod = '';
 
     #[Url]
-    public string $status = 'valid';
+    public string $status = 'all';
 
     #[Url]
     public string $period = 'today';
