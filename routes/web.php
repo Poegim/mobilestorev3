@@ -5,6 +5,7 @@ use App\Livewire\Items\Index as ItemsIndex;
 use App\Livewire\Purchases\Index as PurchasesIndex;
 use App\Livewire\Sells\Index as SellsIndex;
 use App\Livewire\Sells\Show as SellsShow;
+use App\Livewire\Sells\Create as SellsCreate;
 use App\Livewire\Transfers\Index as TransfersIndex;
 use App\Livewire\Transfers\Create as TransfersCreate;
 use App\Livewire\Transfers\Show as TransfersShow;
@@ -63,6 +64,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('items', ItemsIndex::class)->name('items.index');
 
         Route::get('sells', SellsIndex::class)->name('sells.index');
+
+        Route::get('sells/create', SellsCreate::class)->name('sells.create');
         Route::get('sells/{sell}', SellsShow::class)->name('sells.show');
 
         Route::get('purchases/create', PurchasesCreate::class)->name('purchases.create');

@@ -35,7 +35,7 @@
                     icon="shopping-cart"
                     :href="route($routePrefix . 'sells.index', $shopParam)"
                     :current="request()->routeIs('*sells.*')"
-                    :new-href="$currentShop ? '#' : null"
+                    :new-href="$currentShop ? route('shop.sells.create', $currentShop) : null"
                 >
                     Sprzedaż
                 </x-sidebar-item-with-new>

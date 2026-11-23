@@ -12,10 +12,11 @@ use Flux\Flux;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Livewire\Concerns\DeniesAccess;
 
 class Show extends Component
 {
-    use WithPagination;
+    use WithPagination, DeniesAccess;
 
     public Transfer $transfer;
 
