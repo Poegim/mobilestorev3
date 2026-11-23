@@ -9,19 +9,23 @@ use App\Models\User;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Livewire\Concerns\DeniesAccess;
 
 class Index extends Component
 {
     use WithPagination;
+    use DeniesAccess;
+
 
     public string $search = '';
     public string $privilegeFilter = '';
 
     public function mount(): void
     {
-        if (! auth()->user()->isAdmin()) {
-            abort(403);
-        }
+        $this->denyUnless(
+            auth()->user()->isAdmin(),
+            'Lista użytkowników dostępna tylko dla administratorów.'
+        );
     }
 
     public function updatedSearch(): void

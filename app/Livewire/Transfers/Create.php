@@ -181,6 +181,7 @@ class Create extends Component
 
         // Flashed for exactly one request; the layout turns it into a toast
         session()->flash('toast', [
+            'duration' => false,
             'heading' => 'Transfer wysłany',
             'text'    => "Transfer #{$transfer->id} ({$transfer->transferItems()->count()} szt.) jest w drodze.",
             'variant' => 'success',

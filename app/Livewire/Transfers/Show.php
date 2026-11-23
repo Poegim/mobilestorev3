@@ -12,10 +12,11 @@ use Flux\Flux;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Livewire\Concerns\DeniesAccess;
 
 class Show extends Component
 {
-    use WithPagination;
+    use WithPagination, DeniesAccess;
 
     public Transfer $transfer;
 
@@ -32,10 +33,9 @@ class Show extends Component
 
     public function mount(Transfer $transfer, ?Shop $shop = null): void
     {
-        // Only people from one of the two shops (or admins) may open the transfer
-        abort_unless(
+        $this->denyUnless(
             $this->hasAccessTo($transfer->parent_shop_id) || $this->hasAccessTo($transfer->target_shop_id),
-            403
+            'Nie masz dostępu do żadnego ze sklepów powiązanych z tym transferem.'
         );
 
         $this->transfer = $transfer->load(self::EAGER_LOADS)->loadCount('transferItems');
@@ -45,7 +45,10 @@ class Show extends Component
     /** Target shop accepts the transfer: items move to the target shop. */
     public function receive(): void
     {
-        abort_unless($this->mayReceive(), 403);
+        $this->denyUnless(
+            $this->mayReceive(),
+            'Nie masz uprawnień do odbioru tego transferu.'
+        );
 
         $this->close(
             TransferStatus::Completed,
@@ -59,10 +62,12 @@ class Show extends Component
         );
     }
 
-    /** Transfer canceled: items stay in the source shop and go back on the shelf. */
     public function cancel(): void
     {
-        abort_unless($this->mayCancelOrLose(), 403);
+        $this->denyUnless(
+            $this->mayCancelOrLose(),
+            'Nie masz uprawnień do anulowania tego transferu.'
+        );
 
         $this->close(
             TransferStatus::Canceled,
@@ -71,10 +76,12 @@ class Show extends Component
         );
     }
 
-    /** Transfer lost in transit: items are marked as lost. */
     public function markLost(): void
     {
-        abort_unless($this->mayCancelOrLose(), 403);
+        $this->denyUnless(
+            $this->mayCancelOrLose(),
+            'Nie masz uprawnień do oznaczenia transferu jako zgubionego.'
+        );
 
         $this->close(
             TransferStatus::Lost,

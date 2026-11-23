@@ -10,6 +10,8 @@ enum ItemStatus: int
     case Sold      = 4;
     case Transfer  = 5;
     case Invalid   = 6;
+    case Service   = 7;
+    case Draft     = 8;
 
     public function label(): string
     {
@@ -20,6 +22,8 @@ enum ItemStatus: int
             self::Sold      => 'Sprzedany',
             self::Transfer  => 'W transferze',
             self::Invalid   => 'Unieważniony',
+            self::Service   => 'W serwisie',
+            self::Draft     => 'Wersja robocza',
         };
     }
 
@@ -32,6 +36,8 @@ enum ItemStatus: int
             self::Sold      => 'blue',
             self::Transfer  => 'purple',
             self::Invalid   => 'zinc',
+            self::Service   => 'orange',
+            self::Draft     => 'zinc',
         };
     }
 }

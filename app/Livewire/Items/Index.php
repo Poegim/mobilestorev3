@@ -84,12 +84,12 @@ class Index extends Component
 
     public function render()
     {
-        $query = Item::with(['product.brand', 'product.category', 'condition', 
-        'purchasedItem.tax',  
-        'purchasedItem.purchase.contact',
-        'soldItem',
-        'shop'
-        ]);
+        $query = Item::with(['product.brand', 'product.category', 'variant.devices.brand', 'condition', 
+            'purchasedItem.tax',  
+            'purchasedItem.purchase.contact',
+            'soldItem',
+            'shop'
+            ]);
         
         if ($this->shop) {
             $query->where('parent_shop_id', $this->shop->id);

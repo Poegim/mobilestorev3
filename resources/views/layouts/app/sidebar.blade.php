@@ -35,7 +35,7 @@
                     icon="shopping-cart"
                     :href="route($routePrefix . 'sells.index', $shopParam)"
                     :current="request()->routeIs('*sells.*')"
-                    :new-href="$currentShop ? '#' : null"
+                    :new-href="$currentShop ? route('shop.sells.create', $currentShop) : null"
                 >
                     Sprzedaż
                 </x-sidebar-item-with-new>
@@ -44,7 +44,7 @@
                     icon="truck"
                     :href="route($routePrefix . 'purchases.index', $shopParam)"
                     :current="request()->routeIs('*purchases.*')"
-                    :new-href="$currentShop ? '#' : null"
+                    :new-href="$currentShop ? route('shop.purchases.create', $currentShop) : null"
                 >
                     Zakupy
                 </x-sidebar-item-with-new>
@@ -58,6 +58,37 @@
                 >
                     Transfery
                 </x-sidebar-item-with-new>
+
+                <flux:sidebar.item icon="user-group" :href="route('contacts.index')" :current="request()->routeIs('contacts.*')" wire:navigate>
+                    Kontakty
+                </flux:sidebar.item>
+
+                {{-- Catalog: expandable group on the expanded sidebar --}}
+                <flux:sidebar.group heading="Katalog" expandable :expanded="request()->routeIs('catalog.*')" class="in-data-flux-sidebar-collapsed-desktop:hidden">
+                    <flux:sidebar.item icon="cube" :href="route('catalog.products.index')" :current="request()->routeIs('catalog.products.*')" wire:navigate>
+                        Produkty
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="device-phone-mobile" :href="route('catalog.devices.index')" :current="request()->routeIs('catalog.devices.*')" wire:navigate>
+                        Urządzenia
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="tag" :href="route('catalog.brands.index')" :current="request()->routeIs('catalog.brands.*')" wire:navigate>
+                        Marki
+                    </flux:sidebar.item>
+                </flux:sidebar.group>
+
+                {{-- Catalog: single icon with a flyout menu on the collapsed desktop sidebar --}}
+                <flux:dropdown position="right" align="start" class="hidden in-data-flux-sidebar-collapsed-desktop:block">
+                    <flux:sidebar.item icon="book-open" :current="request()->routeIs('catalog.*')" tooltip="Katalog" />
+
+                    <flux:menu>
+                        <flux:menu.item icon="cube" :href="route('catalog.products.index')" wire:navigate>Produkty</flux:menu.item>
+                        <flux:menu.item icon="device-phone-mobile" :href="route('catalog.devices.index')" wire:navigate>Urządzenia</flux:menu.item>
+                        <flux:menu.item icon="tag" :href="route('catalog.brands.index')" wire:navigate>Marki</flux:menu.item>
+                    </flux:menu>
+                </flux:dropdown>
+
+                <flux:separator />
+
                 {{-- Admin-only: user management --}}
                 @if(auth()->user()?->isAdmin())
                     <flux:sidebar.item icon="users" :href="route('admin.users.index')" :current="request()->routeIs('admin.users.*')" wire:navigate>

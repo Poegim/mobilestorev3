@@ -18,14 +18,27 @@ class Device extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function products()
+    public function variants()
     {
-        return $this->belongsToMany(Product::class, 'product_device');
+        return $this->belongsToMany(ProductVariant::class, 'variant_device', 'device_id', 'variant_id');
     }
 
     /** e.g. "Apple iPhone 16" */
     public function getFullNameAttribute(): string
     {
         return trim(($this->brand?->name ?? '') . ' ' . $this->model);
+    }
+
+    public function scopeSearch($query, string $term)
+    {
+        return $query
+            ->leftJoin('brands', 'devices.brand_id', '=', 'brands.id')
+            ->where(function ($q) use ($term) {
+                $q->where('devices.model', 'like', "%{$term}%")
+                  ->orWhereRaw("CONCAT(COALESCE(brands.name, ''), ' ', devices.model) LIKE ?", ["%{$term}%"]);
+            })
+            ->select('devices.*')
+            ->orderBy('brands.name')
+            ->orderBy('devices.model');
     }
 }

@@ -14,6 +14,7 @@ class Item extends Model
         'feature_memory', 'feature_storage',
         'feature_box', 'feature_proof_of_purchase', 'feature_comment', 'feature_dual_sim',
         'barcode_scanned_at', 'displaced_at',
+        'variant_id',
     ];
 
     protected $casts = [
@@ -30,6 +31,11 @@ class Item extends Model
     public function color()
     {
         return $this->belongsTo(Color::class, 'feature_color_id');
+    }
+
+    public function variant()
+    {
+        return $this->belongsTo(ProductVariant::class, 'variant_id');
     }
 
     public function simlockNetwork()
@@ -74,25 +80,20 @@ class Item extends Model
     // cena w groszach — fallback: item → sklep → globalna
     public function getSellingPrice(): ?int
     {
+        // 1. Per-item override
         if ($this->feature_price) {
             return $this->feature_price;
         }
 
-        $price = ProductPrice::where('product_id', $this->product_id)
-            ->where('condition_id', $this->feature_condition_id)
-            ->where('shop_id', $this->parent_shop_id)
-            ->first();
-
-        if ($price) {
-            return $price->price;
+        // 2. Variant price
+        if ($this->variant_id) {
+            $variantPrice = $this->variant?->price;
+            if ($variantPrice) {
+                return $variantPrice;
+            }
         }
 
-        $price = ProductPrice::where('product_id', $this->product_id)
-            ->where('condition_id', $this->feature_condition_id)
-            ->where('shop_id', 0)
-            ->first();
-
-        return $price?->price;
+        return null;
     }
 
     public function getBarcode(): string
