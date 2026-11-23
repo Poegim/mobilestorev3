@@ -7,6 +7,13 @@
                 <flux:button :href="route('shop.sells.create', $shop)" variant="primary" size="sm" icon="plus" wire:navigate>
                     Nowa sprzedaż
                 </flux:button>
+            @else
+                <!-- If no shop is selected, the "New Sell" button is not shown. The user must select a shop first. -->
+                <div class="flex items-center gap-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 px-3 py-2 text-sm text-zinc-500">
+                    <p>
+                        Wybierz sklep, aby utworzyć nową sprzedaż.
+                    </p>
+                </div>
             @endif
             <flux:select wire:model.live="perPage" class="w-20" size="sm">
                 <option value="10">10</option>

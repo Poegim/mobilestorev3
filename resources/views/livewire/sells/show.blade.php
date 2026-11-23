@@ -10,6 +10,19 @@
 
         <div class="ml-auto flex items-center gap-2">
             @if(!$isCancelled)
+                {{-- Print receipt button (disabled when total is 0) --}}
+                @if($this->totalSellGross > 0)
+                    <flux:button variant="primary" size="sm" icon="printer"
+                                 x-on:click="Flux.modal('print-receipt').show()">
+                        Drukuj paragon
+                    </flux:button>
+                @else
+                    <flux:button variant="primary" size="sm" icon="printer" disabled
+                                 title="Nie można wydrukować paragonu na kwotę 0 zł">
+                        Drukuj paragon
+                    </flux:button>
+                @endif
+
                 <flux:button variant="danger" size="sm" icon="x-mark"
                              x-on:click="Flux.modal('confirm-cancel-sell').show()">
                     Anuluj sprzedaż
@@ -270,6 +283,171 @@
             @endif
         </flux:table.rows>
     </flux:table>
+
+    {{-- Print receipt modal --}}
+    <flux:modal name="print-receipt" class="max-w-md">
+        <div x-data="{
+            nipMode: 'no',
+            nipInput: '',
+            printing: false,
+            error: '',
+
+            isValidNip(nip) {
+                if (typeof nip !== 'string') return false;
+                nip = nip.replace(/[\s\-]/g, '');
+                if (nip.length !== 10 || !/^\d{10}$/.test(nip)) return false;
+
+                const weights = [6, 5, 7, 2, 3, 4, 5, 6, 7];
+                let sum = 0;
+                for (let i = 0; i < 9; i++) {
+                    sum += parseInt(nip[i]) * weights[i];
+                }
+                return (sum % 11) === parseInt(nip[9]);
+            },
+
+            async printReceipt() {
+                this.error = '';
+
+                // Validate: receipt must have positions and total > 0
+                const payload = @js($this->printerPayload);
+                if (!payload.pos || payload.pos.length === 0) {
+                    this.error = 'Brak pozycji do wydrukowania — wszystkie mają cenę 0 zł.';
+                    return;
+                }
+                if (!payload.pay || payload.pay.c1 <= 0) {
+                    this.error = 'Nie można wydrukować paragonu na kwotę 0 zł.';
+                    return;
+                }
+
+                if (this.nipMode === 'yes') {
+                    if (!this.nipInput.trim()) {
+                        this.error = 'Podaj numer NIP.';
+                        return;
+                    }
+                    if (!this.isValidNip(this.nipInput.trim())) {
+                        this.error = 'Nieprawidłowy NIP. Sprawdź numer.';
+                        return;
+                    }
+                }
+
+                this.printing = true;
+
+                try {
+                    if (this.nipMode === 'yes') {
+                        payload.nipNumber = this.nipInput.replace(/[\s\-]/g, '');
+                    }
+
+                    const ws = new WebSocket('wss://localhost:8000');
+
+                    await new Promise((resolve, reject) => {
+                        ws.onopen = () => {
+                            ws.send(JSON.stringify(payload));
+                            ws.close();
+                            resolve();
+                        };
+                        ws.onerror = () => {
+                            reject(new Error('Brak połączenia z programem drukarki. Upewnij się, że program jest uruchomiony.'));
+                        };
+                    });
+
+                    await $wire.markBillPrinted();
+
+                    Flux.modal('print-receipt').close();
+                    this.nipMode = 'no';
+                    this.nipInput = '';
+
+                } catch (e) {
+                    this.error = e.message || 'Wystąpił błąd połączenia z drukarką.';
+                } finally {
+                    this.printing = false;
+                }
+            }
+        }" class="space-y-4">
+
+            {{-- Header --}}
+            <div class="flex items-center gap-3">
+                <span class="inline-flex items-center justify-center size-10 rounded-full bg-blue-100 dark:bg-blue-900/30">
+                    <flux:icon name="printer" variant="mini" class="size-5 text-blue-500" />
+                </span>
+                <flux:heading size="lg">Drukuj paragon #{{ $sell->id }}</flux:heading>
+            </div>
+
+            {{-- Warning: already printed --}}
+            @if($this->isBillPrinted)
+                <div class="flex items-start gap-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-3">
+                    <flux:icon name="exclamation-triangle" variant="mini" class="size-5 text-amber-500 shrink-0 mt-0.5" />
+                    <div class="text-sm text-amber-800 dark:text-amber-200">
+                        <p class="font-medium">Paragon już był drukowany</p>
+                        <p class="text-amber-600 dark:text-amber-400">{{ $sell->bill_printed_at->format('d.m.Y H:i') }} — ponowne drukowanie wyśle duplikat do drukarki.</p>
+                    </div>
+                </div>
+            @endif
+
+            {{-- Summary --}}
+            <div class="rounded-lg border border-zinc-200 dark:border-zinc-700 p-3 space-y-1">
+                <div class="flex items-center justify-between text-sm">
+                    <span class="text-zinc-500 dark:text-zinc-400">Pozycji na paragonie:</span>
+                    <span class="font-medium text-zinc-900 dark:text-zinc-100">{{ $this->validItems->count() }} szt.</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                    <span class="text-zinc-500 dark:text-zinc-400">Metoda płatności:</span>
+                    <span class="inline-flex items-center gap-1.5 font-medium text-zinc-900 dark:text-zinc-100">
+                        <span class="inline-flex items-center justify-center size-5 rounded {{ $sell->payment_method->bgClass() }}">
+                            <flux:icon :name="$sell->payment_method->icon()" variant="micro" class="size-3 {{ $sell->payment_method->iconClass() }}" />
+                        </span>
+                        {{ $sell->payment_method->label() }}
+                    </span>
+                </div>
+                <div class="flex items-center justify-between pt-1 border-t border-zinc-100 dark:border-zinc-700">
+                    <span class="font-medium text-zinc-900 dark:text-zinc-100">Do zapłaty:</span>
+                    <span class="font-bold text-lg tabular-nums text-zinc-900 dark:text-white">{{ number_format($this->totalSellGross / 100, 2, ',', ' ') }} zł</span>
+                </div>
+            </div>
+
+            {{-- NIP option --}}
+            <div class="space-y-3">
+                <flux:subheading>NIP na paragonie</flux:subheading>
+                <div class="flex items-center gap-4">
+                    <label class="inline-flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="nip_mode" x-model="nipMode" value="no"
+                               class="text-blue-500 focus:ring-blue-500 dark:bg-zinc-700 dark:border-zinc-600" />
+                        <span class="text-sm text-zinc-700 dark:text-zinc-300">Bez NIP</span>
+                    </label>
+                    <label class="inline-flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="nip_mode" x-model="nipMode" value="yes"
+                               class="text-blue-500 focus:ring-blue-500 dark:bg-zinc-700 dark:border-zinc-600" />
+                        <span class="text-sm text-zinc-700 dark:text-zinc-300">Z NIP-em</span>
+                    </label>
+                </div>
+
+                <div x-show="nipMode === 'yes'" x-transition.duration.200ms>
+                    <input type="text" x-model="nipInput" placeholder="Wpisz NIP (10 cyfr)" maxlength="13"
+                           class="w-full rounded-lg border border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+                </div>
+            </div>
+
+            {{-- Error message --}}
+            <div x-show="error" x-transition.duration.200ms
+                 class="flex items-start gap-2 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3">
+                <flux:icon name="x-circle" variant="mini" class="size-5 text-red-500 shrink-0 mt-0.5" />
+                <span class="text-sm text-red-700 dark:text-red-300" x-text="error"></span>
+            </div>
+
+            {{-- Actions --}}
+            <div class="flex justify-end gap-2 pt-2">
+                <flux:modal.close>
+                    <flux:button variant="ghost">Anuluj</flux:button>
+                </flux:modal.close>
+                <button type="button"
+                        x-on:click="printReceipt()"
+                        x-bind:disabled="printing"
+                        class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed dark:focus:ring-offset-zinc-900">
+                    <flux:icon name="printer" variant="mini" class="size-4" />
+                    <span x-text="printing ? 'Drukuję...' : '{{ $this->isBillPrinted ? 'Drukuj ponownie' : 'Drukuj paragon' }}'"></span>
+                </button>
+            </div>
+        </div>
+    </flux:modal>
 
     {{-- Cancel sell confirmation modal --}}
     <flux:modal name="confirm-cancel-sell" class="max-w-md">

@@ -90,12 +90,45 @@ class Show extends Component
         return $this->validItems->sum(fn ($si) => $si->getIncome());
     }
 
+    /** JSON payload for the fiscal printer (legacy protocol). */
+    #[Computed]
+    public function printerPayload(): array
+    {
+        return $this->sell->buildPrinterPayload();
+    }
+
+    /** Whether this sell's receipt was already printed. */
+    #[Computed]
+    public function isBillPrinted(): bool
+    {
+        return $this->sell->bill_printed_at !== null;
+    }
+
     #[Computed]
     public function backUrl(): string
     {
         return $this->shop
             ? route('shop.sells.index', $this->shop)
             : route('sells.index');
+    }
+
+    /** Mark receipt as printed (called from JS after successful WebSocket send). */
+    public function markBillPrinted(): void
+    {
+        // Guard: total must be > 0 and there must be printable positions
+        $payload = $this->sell->buildPrinterPayload();
+        if (empty($payload['pos']) || ($payload['pay']['c1'] ?? 0) <= 0) {
+            Flux::toast(variant: 'danger', text: 'Nie można wydrukować paragonu — brak pozycji z kwotą > 0 zł.');
+            return;
+        }
+
+        $this->sell->markBillPrinted();
+        $this->sell->refresh();
+
+        // Clear computed properties so the view reflects the new state
+        unset($this->isBillPrinted, $this->printerPayload);
+
+        Flux::toast(variant: 'success', text: 'Paragon oznaczony jako wydrukowany.');
     }
 
     /** Cancel the entire sell – sets valid=0 and returns items to store. */
