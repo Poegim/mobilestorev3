@@ -68,6 +68,18 @@ class Item extends Model
         return $this->hasOne(SoldItem::class, 'item_id')->where('valid', 1);
     }
 
+    /** All sell line items (including invalidated ones) for history. */
+    public function soldItems()
+    {
+        return $this->hasMany(SoldItem::class, 'item_id');
+    }
+
+    /** All transfers this item participated in. */
+    public function transfers()
+    {
+        return $this->belongsToMany(Transfer::class, 'transfers_items', 'item_id', 'transfer_id');
+    }
+
     public function getDaysOnShelfAttribute(): ?int
     {
         if (!$this->displaced_at) {

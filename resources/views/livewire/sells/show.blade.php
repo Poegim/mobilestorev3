@@ -164,7 +164,9 @@
                     {{-- Item ID or Service ID --}}
                     <flux:table.cell variant="strong" class="tabular-nums">
                         @if($si->item_id)
-                            <flux:link :href="route($shop ? 'shop.items.index' : 'items.index', $shop ? [$shop] : []) . '?search=' . $si->item_id" wire:navigate class="font-mono">
+                            <flux:link href="{{ $this->shop ? route('shop.items.show', [$this->shop, $si->item]) : route('items.show', $si->item) }}"
+                                       wire:navigate
+                                       class="hover:text-zinc-900 dark:hover:text-white" >
                                 #{{ $si->item_id }}
                             </flux:link>
                         @elseif($si->service_id)

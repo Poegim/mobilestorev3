@@ -137,19 +137,33 @@
             @forelse($items as $item)
                 <flux:table.row class="group">
 
-                    {{-- ID — links to item detail when available --}}
+                    {{-- ID — links to item detail --}}
                     <flux:table.cell class="text-zinc-400 text-xs tabular-nums">
-                        {{ $item->id }}
+                        <flux:link
+                            href="{{ $this->shop ? route('shop.items.show', [$this->shop, $item]) : route('items.show', $item) }}"
+                            wire:navigate
+                            class="hover:text-zinc-900 dark:hover:text-white"
+                        >{{ $item->id }}</flux:link>
                     </flux:table.cell>
 
+                    {{-- Product name --}}
                     @if(in_array('product', $columns))
                         <flux:table.cell class="whitespace-normal">
-                            <div class="font-medium break-words min-w-32">
+                            <flux:link
+                                href="{{ $this->shop ? route('shop.items.show', [$this->shop, $item]) : route('items.show', $item) }}"
+                                wire:navigate
+                                class="font-medium break-words min-w-32 block"
+                            >
                                 {{ $item->product->brand->name ?? '' }} {{ $item->product->name }}
                                 @if($item->variant?->devices->isNotEmpty())
                                     {{ $item->variant->display_name }}
                                 @endif
-                            </div>
+                            </flux:link>
+                            @if($item->feature_comment)
+                                <flux:text size="sm" class="mt-0.5 text-zinc-400 truncate max-w-64" title="{{ $item->feature_comment }}">
+                                    {{ Str::limit($item->feature_comment, 50) }}
+                                </flux:text>
+                            @endif
                         </flux:table.cell>
                     @endif
 
