@@ -27,6 +27,13 @@
                 <option value="{{ $pm->value }}">{{ $pm->label() }}</option>
             @endforeach
         </flux:select>
+
+        <flux:select wire:model.live="document" class="w-44">
+            <option value="">Umowa / faktura</option>
+            @foreach($documents as $doc)
+                <option value="{{ $doc->value }}">{{ $doc->label() }}</option>
+            @endforeach
+        </flux:select>
         <flux:select wire:model.live="status" class="w-44">
             <option value="">Wszystkie</option>
             @foreach(\App\Enums\PurchaseStatus::cases() as $s)
@@ -42,6 +49,7 @@
             <flux:table.column>Sklep</flux:table.column>
             <flux:table.column>Dostawca</flux:table.column>
             <flux:table.column>Nr faktury</flux:table.column>
+            <flux:table.column>Dokument</flux:table.column>
             <flux:table.column>Pozycje</flux:table.column>
             <flux:table.column>Netto</flux:table.column>
             <flux:table.column>Brutto</flux:table.column>
@@ -61,9 +69,17 @@
                     @endphp
                     <flux:link href="{{ $showRoute }}" wire:navigate class="font-mono">#{{ $purchase->id }}</flux:link>
                 </flux:table.cell>                    <flux:table.cell>{{ $purchase->created_at->format('d.m.Y') }}</flux:table.cell>
-                    <flux:table.cell>{{ $purchase->shop->name ?? '-' }}</flux:table.cell>
-                    <flux:table.cell>{{ $purchase->contact->name ?? '-' }}</flux:table.cell>
+                    <flux:table.cell class="max-w-48 whitespace-normal">{{ $purchase->shop->name ?? '-' }}</flux:table.cell>
+                    <flux:table.cell class="max-w-56 whitespace-normal">{{ $purchase->contact->name ?? '-' }}</flux:table.cell>
                     <flux:table.cell>{{ $purchase->invoice_number ?: '-' }}</flux:table.cell>
+                    <flux:table.cell>
+                        @php $documentType = \App\Enums\PurchaseDocument::fromInvoiceNumber($purchase->invoice_number); @endphp
+                <flux:tooltip :content="$documentType->label()">
+                    <span class="inline-flex">
+                        <flux:icon :name="$documentType->icon()" variant="outline" :class="$documentType->iconClass()" />
+                    </span>
+                </flux:tooltip>
+                    </flux:table.cell>
                     <flux:table.cell>{{ $purchase->getItemsCount() }}</flux:table.cell>
                     <flux:table.cell>{{ number_format($purchase->getTotalNetPrice() / 100, 2, ',', ' ') }} zł</flux:table.cell>
                     <flux:table.cell>{{ number_format($purchase->getTotalGrossPrice() / 100, 2, ',', ' ') }} zł</flux:table.cell>

@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Contracts\GeneratesPrintableDocument;
 use App\Enums\PaymentMethod;
 use App\Enums\PurchaseStatus;
 use App\Enums\PurchaseType;
 use Illuminate\Database\Eloquent\Model;
+use App\Enums\PrintableDocumentType;
 
-class Purchase extends Model
+class Purchase extends Model implements GeneratesPrintableDocument
 {
     protected $fillable = [
         'parent_shop_id', 'contact_id',
@@ -83,5 +85,24 @@ class Purchase extends Model
             PurchaseStatus::Completed => $query->where('is_draft', false)->where('valid', true),
             PurchaseStatus::Cancelled => $query->where('is_draft', false)->where('valid', false),
         };
+    }
+    public function printableDocumentView(PrintableDocumentType $type): string
+    {
+        return match ($type) {
+            PrintableDocumentType::Contract => 'documents.purchase-contract',
+        };
+    }
+
+    public function printableDocumentData(PrintableDocumentType $type): array
+    {
+        return [
+            'purchase' => $this->load(['shop', 'contact', 'purchasedItems.item.product.brand', 'purchasedItems.item.condition']),
+        ];
+    }
+
+    /** Human-readable contract reference shown in the document and menus. */
+    public function contractReference(): string
+    {
+        return 'Umowa #' . $this->id;
     }
 }

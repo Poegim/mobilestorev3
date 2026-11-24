@@ -7,6 +7,7 @@ use App\Models\Shop;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use App\Livewire\Concerns\DeniesAccess;
+use App\Livewire\Purchases\Contract as PurchasesContract;
 
 class Show extends Component
 {
@@ -63,7 +64,12 @@ class Show extends Component
                 $pi->tax_id,
                 $pi->price,
             ]))
-            ->map(fn ($group) => ['pi' => $group->first(), 'qty' => $group->count()])
+            ->map(fn ($group) => [
+                'pi' => $group->first(),
+                'qty' => $group->count(),
+                // IDs of the physical warehouse items in this line, for locating them on the shelf
+                'item_ids' => $group->pluck('item.id')->filter()->values(),
+            ])
             ->values();
     }
 

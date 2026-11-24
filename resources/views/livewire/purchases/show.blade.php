@@ -12,6 +12,15 @@
                 Kontynuuj
             </flux:button>
         @endif
+
+        {{-- Contract printing is only relevant for agreement-type purchases (komis/buy-sell), not invoiced ones --}}
+        @if($purchase->purchase_type === \App\Enums\PurchaseType::Agreement)
+            <flux:button size="sm" icon="printer" class="ml-auto"
+                :href="$purchase->shop ? route('shop.purchases.contract', [$purchase->shop, $purchase]) : route('purchases.contract', $purchase)"
+                wire:navigate>
+                Drukuj umowę
+            </flux:button>
+        @endif
     </div>
 
     {{-- Header --}}

@@ -10,6 +10,8 @@ use App\Models\Shop;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Enums\PurchaseDocument;
+
 
 class Index extends Component
 {
@@ -17,6 +19,9 @@ class Index extends Component
 
     #[Url]
     public string $search = '';
+
+    #[Url]
+    public string $document = '';
 
     #[Url]
     public string $paymentMethod = '';
@@ -51,6 +56,11 @@ class Index extends Component
     }
 
     public function updatedPeriod(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedDocument(): void
     {
         $this->resetPage();
     }
@@ -90,6 +100,13 @@ class Index extends Component
             $query->withStatus($status);
         }
 
+        // Filter by document type: invoice = invoice number present, contract = none
+        match (PurchaseDocument::tryFrom($this->document)) {
+            PurchaseDocument::Invoice => $query->whereNotNull('invoice_number')->where('invoice_number', '!=', ''),
+            PurchaseDocument::Contract => $query->where(fn ($q) => $q->whereNull('invoice_number')->orWhere('invoice_number', '')),
+            default => null,
+        };
+
         // Filter by date period
         if ($this->period !== '' && $this->period !== 'all') {
             $period = Period::tryFrom($this->period);
@@ -108,6 +125,7 @@ class Index extends Component
             'purchases' => $purchases,
             'paymentMethods' => PaymentMethod::cases(),
             'periods' => Period::cases(),
+            'documents' => PurchaseDocument::cases(),
         ]);
     }
 }
